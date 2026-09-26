@@ -135,7 +135,7 @@ system: {
   extra: `<h4>Build roadmap</h4>
     <table><tr><th>Phase</th><th>Milestone on the board</th></tr>
     <tr><td>0 ✓</td><td>Board test: JTAG, UART, LEDs, buttons, XADC verified</td></tr>
-    <tr><td>1</td><td>MicroBlaze V shell: <code>status</code> command, LEDs, temperature, 3 Mbaud link</td></tr>
+    <tr><td>1 ✓</td><td>MicroBlaze V shell: <code>status</code> command, LEDs, temperature, 115200-baud link</td></tr>
     <tr><td>2</td><td>Mic → 16 kHz audio, level meter, test tone, record WAV on the PC</td></tr>
     <tr><td>3</td><td>Spectrum engine + software mel/log, live spectrogram on the PC</td></tr>
     <tr><td>4</td><td>int8 CNN classifier running twice per second</td></tr>
@@ -170,7 +170,7 @@ system: {
                 "During development the design is loaded over JTAG instead, which is faster but lost at power-off."] },
     { id: "ftdi", x: 280, y: 280, w: 220, h: 70, kind: "hw", label: "FT2232H USB bridge", sub: "JTAG + UART",
       purpose: "One USB cable gives two channels: JTAG (programming and debug) and a serial port (COM port on the PC).",
-      params: ["UART at 3 Mbaud (FT2232H supports up to 12 Mbaud)", "Only TX/RX are wired, so there is no hardware flow control", "JTAG used by Vivado and the MicroBlaze debugger"] },
+      params: ["UART fixed at 115,200 baud", "Only TX/RX are wired, so there is no hardware flow control", "JTAG used by Vivado and the MicroBlaze debugger"] },
     { id: "io", x: 530, y: 295, w: 170, h: 56, kind: "hw", label: "LEDs + buttons", sub: "2 LEDs, RGB, 2 buttons",
       purpose: "Local status display and user input.",
       details: ["Planned mapping: the RGB colour shows the detected class, LD1 is a heartbeat, LD2 lights on a detected sound event, BTN0 toggles streaming, BTN1 forces a status dump."] },
@@ -236,7 +236,7 @@ fpga: {
     { id: "tone", x: 40, y: 225, w: 150, h: 50, kind: "hdl", label: "Test sources", sub: "tone + PC injection",
       purpose: "Signal sources for testing without a microphone.",
       details: ["A test-tone generator (sine lookup) for the boot self-test: the processor checks that the FFT peak lands in the expected bin.",
-                "PC audio injection: the PC streams a recording over the UART into the pipeline in place of the mic. This is the most valuable test hook: dataset clips run through the real hardware, bit-exact, so the board's output can be compared with the PC model."] },
+                "PC audio injection: the PC streams a recording over the UART into the pipeline in place of the mic, at about a third of real time over the 115200-baud link (the pipeline simply waits for samples). This is the most valuable test hook: dataset clips run through the real hardware, bit-exact, so the board's output can be compared with the PC model."] },
     { id: "front", x: 230, y: 90, w: 190, h: 110, kind: "hdl", label: "Audio front-end", sub: "2.4 MHz → 16 kHz, 24-bit", open: "frontend",
       purpose: "Turns the 1-bit PDM stream into clean 24-bit audio samples.",
       details: ["CIC decimator, half-band and polyphase FIR filters, input selection, DC removal, gain and level metering. Open it for the individual filters."] },
@@ -255,7 +255,7 @@ fpga: {
       details: ["Per-block RMS level, peak, clipping count, noise-floor estimate, and frame and overflow counters for every FIFO, all readable by the processor."] },
     { id: "clk", x: 40, y: 360, w: 170, h: 70, kind: "ip", label: "Clocking wizard", sub: "MMCM 12 → 96 MHz",
       purpose: "Makes the 96 MHz system clock from the 12 MHz oscillator.",
-      details: ["VCO = 12 MHz × 64 = 768 MHz, ÷8 = 96 MHz. Every other rate (2.4 MHz PDM, 3 Mbaud UART, 12 MHz ADC master clock) is a clean integer division of 96 MHz, so the whole design is one clock domain with no clock-crossing logic.",
+      details: ["VCO = 12 MHz × 64 = 768 MHz, ÷8 = 96 MHz. Every other rate (2.4 MHz PDM, UART bit clock, 12 MHz ADC master clock) is a clean integer division of 96 MHz, so the whole design is one clock domain with no clock-crossing logic.",
                 "External inputs (PDM data, UART RX, buttons) are registered and synchronized at the pins."] },
     { id: "cpu", x: 250, y: 360, w: 230, h: 110, kind: "cpu", label: "Processor subsystem", sub: "MicroBlaze V + AXI peripherals", open: "cpu",
       purpose: "Runs the firmware: configures the DSP blocks, computes features, runs the classifier, and handles the serial interface.",
@@ -263,10 +263,10 @@ fpga: {
     { id: "regs", x: 520, y: 360, w: 180, h: 70, kind: "hdl", label: "Register bank", sub: "AXI4-Lite slave",
       purpose: "The processor's window into the DSP pipeline.",
       details: ["Control and status registers for every fabric block: source select, PDM capture phase, gain, FIR profile, FFT length, spectrum buffer, counters, interrupt status, and version registers holding the build's git hash."] },
-    { id: "uart", x: 520, y: 450, w: 180, h: 60, kind: "hdl", label: "UART", sub: "custom AXI, 3 Mbaud",
+    { id: "uart", x: 520, y: 450, w: 180, h: 60, kind: "hdl", label: "UART", sub: "custom AXI, 115200 baud",
       purpose: "Serial link to the PC through the FT2232H.",
-      details: ["Grown from the board test's verified uart.v: a runtime-settable divisor (96 MHz ÷ 32 = exactly 3 Mbaud; 115,200 for a terminal) and a 4 KB transmit FIFO.",
-                "AMD's UART Lite can't be used at these rates: at 96 MHz its fixed divider gives a 7% error at 921,600 baud, so its practical limit is 460,800."],
+      details: ["Grown from the board test's verified uart.v: a 4 KB transmit FIFO and a divisor register. The link is fixed at 115,200 baud (96 MHz ÷ 833, 0.04% error), which any serial terminal can use.",
+                "At 115,200 baud the link carries about 11 kB/s: enough for status, class results and mel frames (about 6.5 kB/s), but not live 16 kHz audio (32 kB/s), which is captured to memory first and uploaded afterwards."],
       params: ["16 kHz audio needs about 336 kbit/s; mel frames about 53 kbit/s", "Packets: COBS framing + CRC16 + sequence number"] },
     { id: "xadc", x: 740, y: 360, w: 220, h: 60, kind: "ip", label: "XADC monitor", sub: "temp + supply voltages",
       purpose: "On-chip sensor readings for the status report.",
@@ -275,7 +275,7 @@ fpga: {
       purpose: "Drives the LEDs and reads the buttons under firmware control." },
     { id: "sramc", x: 740, y: 520, w: 220, h: 60, kind: "ip", label: "SRAM controller", sub: "AXI EMC → 512 KB", future: true,
       purpose: "Lets the processor use the external SRAM.",
-      details: ["Deferred to the hydrophone phase, for long raw-audio captures (10 s of 16 kHz audio is 320 KB). v1 streams everything live over the 3 Mbaud UART instead."] },
+      details: ["Deferred to the hydrophone phase, for long raw-audio captures (10 s of 16 kHz audio is 320 KB). Short v1 captures fit in processor memory and upload over the 115200-baud UART instead."] },
     { id: "jtag", x: 40, y: 470, w: 170, h: 60, kind: "ip", label: "Debug module", sub: "MDM over JTAG",
       purpose: "Lets the PC load firmware and debug the processor over the same USB cable.",
       details: ["New firmware downloads in about 5 seconds with xsdb, with no FPGA rebuild."] }
@@ -424,7 +424,7 @@ cpu: {
       details: ["Open it to see the firmware modules."] },
     { id: "axi", x: 330, y: 60, w: 70, h: 340, kind: "ip", label: "AXI", sub: "",
       purpose: "AXI4-Lite interconnect: connects the CPU to all peripherals by address." },
-    { id: "uartp", x: 470, y: 60, w: 210, h: 60, kind: "hdl", label: "UART", sub: "custom, 3 Mbaud, 4 KB FIFO",
+    { id: "uartp", x: 470, y: 60, w: 210, h: 60, kind: "hdl", label: "UART", sub: "custom, 115200 baud, 4 KB FIFO",
       purpose: "Serial port to the PC for commands, status and streaming." },
     { id: "tmr", x: 470, y: 135, w: 210, h: 60, kind: "ip", label: "Timer", sub: "AXI Timer",
       purpose: "Time base for uptime, scheduling and CPU-load measurement." },
@@ -513,7 +513,7 @@ host: {
   lead: "Python tools that talk to the board and build the classifier. A bit-exact model of the FPGA pipeline keeps the training data and the hardware in agreement.",
   h: 470,
   nodes: [
-    { id: "ser", x: 40, y: 60, w: 200, h: 70, kind: "pc", label: "Serial link", sub: "pyserial, 3 Mbaud",
+    { id: "ser", x: 40, y: 60, w: 200, h: 70, kind: "pc", label: "Serial link", sub: "pyserial, 115200 baud",
       purpose: "Finds the board's COM port and handles both the text shell and the binary packets." },
     { id: "cli", x: 290, y: 60, w: 200, h: 70, kind: "pc", label: "CLI", sub: "status · monitor · record · inject",
       purpose: "Command-line tool: print status, watch classifications live, record audio to WAV, and inject WAV files into the pipeline." },
