@@ -136,8 +136,8 @@ system: {
     <table><tr><th>Phase</th><th>Milestone on the board</th></tr>
     <tr><td>0 ✓</td><td>Board test: JTAG, UART, LEDs, buttons, XADC verified</td></tr>
     <tr><td>1 ✓</td><td>MicroBlaze V shell: <code>status</code> command, LEDs, temperature, 115200-baud link</td></tr>
-    <tr><td>2</td><td>Mic → 16 kHz audio, level meter, test tone, record WAV on the PC</td></tr>
-    <tr><td>3</td><td>Spectrum engine + software mel/log, live spectrogram on the PC</td></tr>
+    <tr><td>2 ✓</td><td>Mic → 16 kHz audio, level meter, test tone, record WAV on the PC</td></tr>
+    <tr><td>3 ✓</td><td>Spectrum engine + software mel/log, live spectrogram on the PC</td></tr>
     <tr><td>4</td><td>int8 CNN classifier running twice per second</td></tr>
     <tr><td>5</td><td>Event gate, smoothing, boot from flash, self-test</td></tr>
     <tr><td>6</td><td>Hydrophone: I2S ADC, DEMON, LOFAR, SRAM capture</td></tr></table>
@@ -218,6 +218,7 @@ fpga: {
     <tr><td>FFT (≤2048 pt) + power</td><td>1.15k</td><td>4</td><td>5</td></tr>
     <tr><td>DEMON</td><td>0.5k</td><td>1.5</td><td>2</td></tr>
     <tr><td><b>Total</b></td><td><b>8.3k (40%)</b></td><td><b>42 / 50</b></td><td><b>15 (17%)</b></td></tr></table>
+    <p class="hint">Measured after phase 3 (processor, front-end, FFT): 4.1k LUTs (20%), 39 / 50 block RAMs, 12 DSPs, timing met at 96 MHz.</p>
     <p class="hint">Block RAM is the scarce resource, which is why the mel filterbank, log and feature history run in processor memory instead of fabric.</p>`,
   groups: [
     { x: 20, y: 40, w: 960, h: 250, label: "Streaming DSP (fabric)" },
@@ -368,11 +369,11 @@ features: {
     { id: "win", x: 230, y: 90, w: 140, h: 80, kind: "hdl", label: "Hann window", sub: "coefficient ROM",
       purpose: "Tapers each frame's edges to reduce spectral leakage in the FFT.",
       params: ["1 DSP multiply"] },
-    { id: "fft", x: 410, y: 90, w: 150, h: 80, kind: "ip", label: "FFT", sub: "AMD xfft v9.1",
+    { id: "fft", x: 410, y: 90, w: 150, h: 80, kind: "hdl", label: "FFT", sub: "custom radix-2, 512-pt",
       purpose: "Converts each frame to 257 frequency bins (31.25 Hz spacing).",
-      details: ["Radix-2 Lite burst architecture: the smallest option, and still far faster than needed (a new frame arrives every 16 ms).",
-                "Length is set at run time up to 2048 points, for the hydrophone's LOFAR profile. AMD's bit-accurate C model is used as the simulation reference."],
-      params: ["18-bit input, block floating point", "About 3 DSP slices, 3 block RAMs"] },
+      details: ["In-place radix-2 decimation-in-time: samples are loaded in bit-reversed order, then 9 stages of 256 butterflies, one butterfly every 5 clocks (about 12,000 clocks per frame; a new frame arrives every 1.5 million clocks).",
+                "Written in-house instead of using AMD's FFT IP so that it is bit-exact with a short Python model (model/spectrum.py) and simulates without generated IP files. Verified bit-exact in simulation and on the board."],
+      params: ["25-bit data, 18-bit twiddles, divide by 2 per stage", "Two 25-bit dual-port block RAMs (real, imaginary), 4 DSP slices"] },
     { id: "pwr", x: 600, y: 90, w: 130, h: 80, kind: "hdl", label: "Power", sub: "re² + im²",
       purpose: "Magnitude-squared of each FFT bin: energy per frequency.",
       params: ["2 DSP slices"] },
