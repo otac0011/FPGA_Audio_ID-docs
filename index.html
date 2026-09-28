@@ -3,730 +3,637 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FPGA Audio ID Architecture</title>
-<meta name="description" content="Interactive block diagram of the FPGA Audio ID design: PDM microphone, Cmod A7-35T FPGA, MicroBlaze V, DSP pipeline, firmware and PC tools.">
+<title>FPGA Audio ID Map</title>
+<meta name="description" content="Clickable map of everything the FPGA Audio ID design does, from microphone pulses to a sound category.">
 <style>
 :root {
-  --bg: #f6f7f9; --panel: #ffffff; --ink: #1c2230; --muted: #5b6475; --line: #8a93a6; --grid: #e6e9ef;
-  --hw: #e8eef9; --hw-b: #5877b8;
-  --hdl: #e7f4ee; --hdl-b: #3f8f6b;
-  --ip: #fdf1e3; --ip-b: #c07a2c;
-  --cpu: #f1eafa; --cpu-b: #7d58b8;
-  --sw: #fbe9ee; --sw-b: #b8506d;
-  --pc: #eef1f4; --pc-b: #607080;
-  --sel: #f2b705; --accent: #2f6fdb;
-  --group: rgba(90,110,150,0.06); --group-b: #b6bfcf;
+  --bg: #f4f5f7; --panel: #ffffff; --ink: #1b2130; --muted: #5b6475; --line: #8b93a5; --grid: #e2e6ed;
+  --lane: #fafbfc; --lane-edge: #dde2ea; --accent: #0f766e; --flow: #0f766e; --sel: #f59e0b;
+  --k-io: #475569;  --k-io-bg: #eef1f5;
+  --k-dsp: #1d4ed8; --k-dsp-bg: #e7eefc;
+  --k-mem: #b45309; --k-mem-bg: #fcf1e3;
+  --k-fw: #15803d;  --k-fw-bg: #e5f4ea;
+  --k-plat: #6d28d9; --k-plat-bg: #efe9fb;
+  --k-out: #be123c; --k-out-bg: #fce8ee;
+  --c-speech: #16a34a; --c-vehicle: #2563eb; --c-machinery: #a21caf; --c-alarm: #dc2626; --c-background: #6b7280;
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12151b; --panel: #1b2029; --ink: #e5e9f0; --muted: #9aa4b5; --line: #7c869a; --grid: #262c37;
-    --hw: #1d2a44; --hw-b: #7d9be0; --hdl: #173127; --hdl-b: #5fbf93; --ip: #3a2a17; --ip-b: #e0a15a;
-    --cpu: #2b2140; --cpu-b: #ad8ae6; --sw: #3a1c26; --sw-b: #e27c98; --pc: #232a33; --pc-b: #95a5b5;
-    --sel: #f5c542; --accent: #6fa1ff; --group: rgba(140,160,200,0.07); --group-b: #3d4556;
+    --bg: #11141a; --panel: #1a1f28; --ink: #e6e9ef; --muted: #9ba4b4; --line: #6f798c; --grid: #2a303b;
+    --lane: #151920; --lane-edge: #262c37; --accent: #2dd4bf; --flow: #2dd4bf; --sel: #fbbf24;
+    --k-io: #a3b1c6;  --k-io-bg: #1f2530;
+    --k-dsp: #7aa2ff; --k-dsp-bg: #17233d;
+    --k-mem: #f0a44b; --k-mem-bg: #2d2114;
+    --k-fw: #4ade80;  --k-fw-bg: #142a1d;
+    --k-plat: #b79bff; --k-plat-bg: #231c38;
+    --k-out: #fb7190; --k-out-bg: #33161f;
+    --c-speech: #4ade80; --c-vehicle: #60a5fa; --c-machinery: #e879f9; --c-alarm: #f87171; --c-background: #9ca3af;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12151b; --panel: #1b2029; --ink: #e5e9f0; --muted: #9aa4b5; --line: #7c869a; --grid: #262c37;
-  --hw: #1d2a44; --hw-b: #7d9be0; --hdl: #173127; --hdl-b: #5fbf93; --ip: #3a2a17; --ip-b: #e0a15a;
-  --cpu: #2b2140; --cpu-b: #ad8ae6; --sw: #3a1c26; --sw-b: #e27c98; --pc: #232a33; --pc-b: #95a5b5;
-  --sel: #f5c542; --accent: #6fa1ff; --group: rgba(140,160,200,0.07); --group-b: #3d4556;
+  --bg: #11141a; --panel: #1a1f28; --ink: #e6e9ef; --muted: #9ba4b4; --line: #6f798c; --grid: #2a303b;
+  --lane: #151920; --lane-edge: #262c37; --accent: #2dd4bf; --flow: #2dd4bf; --sel: #fbbf24;
+  --k-io: #a3b1c6;  --k-io-bg: #1f2530;
+  --k-dsp: #7aa2ff; --k-dsp-bg: #17233d;
+  --k-mem: #f0a44b; --k-mem-bg: #2d2114;
+  --k-fw: #4ade80;  --k-fw-bg: #142a1d;
+  --k-plat: #b79bff; --k-plat-bg: #231c38;
+  --k-out: #fb7190; --k-out-bg: #33161f;
+  --c-speech: #4ade80; --c-vehicle: #60a5fa; --c-machinery: #e879f9; --c-alarm: #f87171; --c-background: #9ca3af;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-header { padding: 16px 20px 8px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
-header h1 { font-size: 20px; margin: 0; }
-header .sub { color: var(--muted); font-size: 14px; }
-#theme { margin-left: auto; background: var(--panel); color: var(--ink); border: 1px solid var(--grid);
-  border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
-nav#crumbs { padding: 0 20px 8px; font-size: 14px; color: var(--muted); }
-nav#crumbs a { color: var(--accent); text-decoration: none; cursor: pointer; }
-nav#crumbs a:hover { text-decoration: underline; }
-main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 0 20px 20px; }
-@media (max-width: 1200px) { main { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 900px) { main { padding: 0 16px 16px; }
-  header { padding: 12px 16px 6px; } nav#crumbs { padding: 0 16px 8px; } }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px 10px; flex-wrap: wrap; }
+header h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
+header p { margin: 2px 0 0; color: var(--muted); max-width: 820px; }
+.hbtns { margin-left: auto; display: flex; gap: 8px; }
+button { font: inherit; }
+.btn { background: var(--panel); color: var(--ink); border: 1px solid var(--grid); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { border-color: var(--line); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn.primary { color: #0b1714; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #0b1714; } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 20px 12px; }
+.chip { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: var(--panel); border: 1px solid var(--grid); color: var(--muted); }
+.chip b { color: var(--ink); font-weight: 600; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 16px; padding: 0 20px 24px; }
+@media (max-width: 1180px) { main { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { header, .chips { padding-left: 16px; padding-right: 16px; } main { padding: 0 16px 16px; } }
+.card { background: var(--panel); border: 1px solid var(--grid); border-radius: 12px; }
+#mapcard { padding: 10px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--muted); padding: 2px 6px 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 10px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
 #svgwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.card { background: var(--panel); border: 1px solid var(--grid); border-radius: 10px; }
-#stage { padding: 12px; min-width: 0; }
-#stage h2 { margin: 2px 4px 2px; font-size: 17px; }
-#stage .lead { margin: 0 4px 10px; color: var(--muted); font-size: 14px; }
-svg#diagram { width: 100%; min-width: 680px; height: auto; display: block; }
-.node { cursor: pointer; }
-.node rect.box { stroke-width: 1.6; rx: 8; transition: stroke-width .1s; }
-.node:hover rect.box { stroke-width: 2.6; }
-.node.selected rect.box { stroke: var(--sel) !important; stroke-width: 3.2; }
-.node:focus { outline: none; }
-.node:focus-visible rect.box { stroke: var(--accent) !important; stroke-width: 3; }
-.node text { fill: var(--ink); pointer-events: none; }
-.node text.lbl { font-size: 14px; font-weight: 600; }
-.node text.sub { font-size: 11.5px; fill: var(--muted); }
-.node .drill { fill: var(--accent); font-size: 12px; font-weight: 700; }
-.future rect.box { stroke-dasharray: 6 4; opacity: .85; }
-.k-hw rect.box { fill: var(--hw); stroke: var(--hw-b); }
-.k-hdl rect.box { fill: var(--hdl); stroke: var(--hdl-b); }
-.k-ip rect.box { fill: var(--ip); stroke: var(--ip-b); }
-.k-cpu rect.box { fill: var(--cpu); stroke: var(--cpu-b); }
-.k-sw rect.box { fill: var(--sw); stroke: var(--sw-b); }
-.k-pc rect.box { fill: var(--pc); stroke: var(--pc-b); }
-.group rect { fill: var(--group); stroke: var(--group-b); stroke-dasharray: 4 3; rx: 12; }
-.group text { fill: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-.edge path { fill: none; stroke: var(--line); stroke-width: 1.6; }
-.edge.bus path { stroke-width: 3; opacity: .7; }
-.edge.future path { stroke-dasharray: 5 4; }
-.edge text { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
-#legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 4px 2px; font-size: 12.5px; color: var(--muted); }
-#legend span { display: inline-flex; align-items: center; gap: 6px; }
-#legend i { width: 14px; height: 10px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
-#panel { padding: 16px 18px; align-self: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
-@media (max-width: 1200px) { #panel { position: static; max-height: none; } }
-#panel h3 { margin: 0 0 2px; font-size: 18px; }
-#panel .tag { display: inline-block; font-size: 11.5px; padding: 1px 8px; border-radius: 999px; margin: 4px 6px 8px 0;
-  border: 1px solid var(--grid); color: var(--muted); }
-#panel .tag.st-planned { border-color: var(--accent); color: var(--accent); }
-#panel .tag.st-future { border-style: dashed; }
-#panel .tag.st-verified { border-color: var(--hdl-b); color: var(--hdl-b); }
-#panel h4 { margin: 14px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-#panel p { margin: 6px 0; }
-#panel ul { margin: 4px 0; padding-left: 18px; }
-#panel li { margin: 2px 0; }
-#panel code { font-size: 12.5px; background: var(--grid); padding: 0 4px; border-radius: 4px; }
-#open { margin-top: 12px; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px;
-  font: inherit; font-weight: 600; cursor: pointer; }
-#open:hover { filter: brightness(1.08); }
-.hint { color: var(--muted); font-size: 13px; }
-#panel table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0 8px; }
-#panel th, #panel td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--grid); vertical-align: top; }
-#panel th { color: var(--muted); font-weight: 600; }
-footer { padding: 0 20px 24px; color: var(--muted); font-size: 12.5px; }
+#map { display: block; width: 100%; min-width: 760px; height: auto; }
+.hint { font-size: 12.5px; color: var(--muted); padding: 6px 6px 0; }
+#panel { padding: 16px 18px 18px; align-self: start; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+@media (max-width: 1180px) { #panel { position: static; max-height: none; } }
+#panel h2 { margin: 0; font-size: 19px; }
+#panel h3 { margin: 16px 0 6px; font-size: 14px; }
+#panel p { margin: 8px 0; }
+#panel ul { margin: 6px 0; padding-left: 20px; }
+#panel li { margin: 3px 0; }
+.kicker { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-bottom: 6px; }
+#panel table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 6px 0; }
+#panel th, #panel td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+#panel th { color: var(--muted); font-weight: 500; width: 42%; }
+#panel code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+#panel code { background: var(--grid); padding: 0 4px; border-radius: 4px; }
+.src { color: var(--muted); font-size: 12.5px; }
+.navrow { display: flex; gap: 8px; margin-top: 14px; }
+.navrow .btn { flex: 1; font-size: 13px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.navrow .btn.next { text-align: right; }
+.chart { width: 100%; height: auto; display: block; margin: 6px 0 2px; }
+.cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+.bar { height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); }
+.conf td, .conf th { text-align: center !important; font-variant-numeric: tabular-nums; }
+.conf th { width: auto !important; font-size: 11.5px; }
+img.shot { width: 100%; border-radius: 8px; border: 1px solid var(--grid); margin: 6px 0; }
+
+/* map */
+.lane rect { fill: var(--lane); stroke: var(--lane-edge); }
+.lane text { fill: var(--muted); font-size: 13px; font-weight: 600; }
+.blk { cursor: pointer; outline: none; }
+.blk rect.box { stroke-width: 1.5; transition: stroke-width .15s; }
+.blk:hover rect.box, .blk:focus-visible rect.box { stroke-width: 3; }
+.blk.sel rect.box { stroke: var(--sel) !important; stroke-width: 3.5; }
+.blk text { pointer-events: none; }
+.blk .t { font-size: 14px; font-weight: 650; fill: var(--ink); }
+.blk .s { font-size: 11.5px; fill: var(--muted); }
+.blk .r { font-size: 11px; font-family: ui-monospace, Consolas, monospace; }
+.edge .base { fill: none; stroke: var(--line); stroke-width: 1.8; }
+.edge.ctrl .base { stroke-dasharray: 5 4; stroke-width: 1.3; }
+.edge .dots { fill: none; stroke: var(--flow); stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 0.1 16; animation: flow 1.1s linear infinite; opacity: .75; }
+.edge.hi .base { stroke: var(--sel); stroke-width: 2.6; }
+.elabel { font-size: 11.5px; fill: var(--muted); font-style: italic; }
+@keyframes flow { to { stroke-dashoffset: -16.1; } }
+@media (prefers-reduced-motion: reduce) { .edge .dots { display: none; } }
+.k-io rect.box { fill: var(--k-io-bg); stroke: var(--k-io); }       .k-io .r { fill: var(--k-io); }
+.k-dsp rect.box { fill: var(--k-dsp-bg); stroke: var(--k-dsp); }    .k-dsp .r { fill: var(--k-dsp); }
+.k-mem rect.box { fill: var(--k-mem-bg); stroke: var(--k-mem); }    .k-mem .r { fill: var(--k-mem); }
+.k-fw rect.box { fill: var(--k-fw-bg); stroke: var(--k-fw); }       .k-fw .r { fill: var(--k-fw); }
+.k-plat rect.box { fill: var(--k-plat-bg); stroke: var(--k-plat); } .k-plat .r { fill: var(--k-plat); }
+.k-out rect.box { fill: var(--k-out-bg); stroke: var(--k-out); }    .k-out .r { fill: var(--k-out); }
+
+/* charts */
+.ax { stroke: var(--line); stroke-width: 1; }
+.gl { stroke: var(--grid); stroke-width: 1; }
+.tk { fill: var(--muted); font-size: 10.5px; }
+.al { fill: var(--muted); font-size: 11px; }
+.s1 { fill: none; stroke: var(--k-dsp); stroke-width: 1.8; }
+.s2 { fill: none; stroke: var(--k-out); stroke-width: 1.6; }
+.s3 { fill: none; stroke: var(--k-fw); stroke-width: 1.6; }
+.s4 { fill: none; stroke: var(--k-mem); stroke-width: 1.6; }
+.band { fill: var(--k-fw); opacity: .10; }
+.mk { stroke: var(--k-out); stroke-width: 1; stroke-dasharray: 3 3; }
+.mkt { fill: var(--k-out); font-size: 10.5px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>FPGA Audio ID</h1>
-  <span class="sub">Sound classifier on a Digilent Cmod A7-35T: interactive architecture map</span>
-  <button id="theme" type="button" aria-label="Toggle light/dark theme">Theme</button>
+  <div>
+    <h1>FPGA Audio ID: what the FPGA does</h1>
+    <p>A PDM microphone on a Digilent Cmod A7-35T. Logic in the FPGA turns the mic's pulses into a spectrum;
+       a MicroBlaze V processor inside the same chip turns spectra into one of five sound categories twice a second.
+       Click any block, or follow the sound from the microphone.</p>
+  </div>
+  <div class="hbtns">
+    <button class="btn primary" id="tour">Follow the sound ▶</button>
+    <button class="btn" id="theme" aria-label="Toggle light or dark theme">◐</button>
+  </div>
 </header>
-<nav id="crumbs" aria-label="Breadcrumb"></nav>
+<div class="chips">
+  <span class="chip"><b>XC7A35T</b> Artix-7</span>
+  <span class="chip">one <b>96 MHz</b> clock</span>
+  <span class="chip"><b>4,093</b> LUTs (20%)</span>
+  <span class="chip"><b>39 / 50</b> block RAMs</span>
+  <span class="chip"><b>12</b> DSP slices</span>
+  <span class="chip">timing met, <b>+0.38 ns</b></span>
+  <span class="chip"><b>2</b> decisions per second</span>
+  <span class="chip">boots from flash in <b>~0.1 s</b></span>
+</div>
 <main>
-  <section id="stage" class="card">
-    <h2 id="vtitle"></h2>
-    <p class="lead" id="vlead"></p>
-    <div id="svgwrap"><svg id="diagram" role="img" aria-labelledby="vtitle"></svg></div>
-    <div id="legend"></div>
+  <section class="card" id="mapcard">
+    <div class="legend">
+      <span><i style="border-color:var(--k-io);background:var(--k-io-bg)"></i>external parts &amp; pins</span>
+      <span><i style="border-color:var(--k-dsp);background:var(--k-dsp-bg)"></i>signal-processing logic</span>
+      <span><i style="border-color:var(--k-mem);background:var(--k-mem-bg)"></i>RAM / ROM</span>
+      <span><i style="border-color:var(--k-fw);background:var(--k-fw-bg)"></i>firmware on the processor</span>
+      <span><i style="border-color:var(--k-plat);background:var(--k-plat-bg)"></i>platform</span>
+      <span><i style="border-color:var(--k-out);background:var(--k-out-bg)"></i>outputs</span>
+    </div>
+    <div id="svgwrap"><svg id="map" viewBox="0 0 1200 925" role="group" aria-label="Block diagram of the FPGA design"></svg></div>
+    <div class="hint">Solid lines carry audio data (dots show the direction); dashed lines are control or debug. ← → keys step through the blocks.</div>
   </section>
-  <aside id="panel" class="card" aria-live="polite"></aside>
+  <aside class="card" id="panel" aria-live="polite"></aside>
 </main>
-<footer>Click a block to see what it does. Blocks marked <b>▸</b> open a more detailed diagram (or double-click them).
-Dashed outlines are planned for later (hydrophone path, optional blocks). Source: <code>docs/index.html</code> in the FPGA_Audio_ID repo.</footer>
 
 <script>
-// ---------------------------------------------------------------------------
-// Architecture data. Each view is a diagram: nodes (x, y, w, h in a 1000-wide
-// viewBox), optional groups, and edges. A node with `open` drills into that view.
-// kind: hw (physical part) | hdl (custom RTL) | ip (AMD IP core) | cpu | sw (firmware) | pc (host software)
-// ---------------------------------------------------------------------------
-const VIEWS = {
+const DATA = {"hb":[2,0,-35,0,164,0,-515,0,1289,0,-2814,0,5737,0,-12174,0,41114,65537,41114,0,-12174,0,5737,0,-2814,0,1289,0,-515,0,164,0,-35,0,2],"lp":[-5,-195,-344,-438,-359,-115,159,276,147,-127,-315,-235,73,359,354,20,-382,-492,-165,359,626,354,-281,-742,-582,133,816,833,83,-840,-1105,-381,791,1391,793,-601,-1609,-1258,295,1766,1787,153,-1837,-2391,-809,1733,3013,1675,-1409,-3628,-2794,783,4202,4239,268,-4711,-6193,-2026,5115,9124,5226,-5340,-14667,-12838,4888,33495,59952,70683,59952,33495,4888,-12838,-14667,-5340,5226,9124,5115,-2026,-6193,-4711,268,4239,4202,783,-2794,-3628,-1409,1675,3013,1733,-809,-2391,-1837,153,1787,1766,295,-1258,-1609,-601,793,1391,791,-381,-1105,-840,83,833,816,133,-582,-742,-281,354,626,359,-165,-492,-382,20,354,359,73,-235,-315,-127,147,276,159,-115,-359,-438,-344,-195,-5],"mel_first":[2,4,5,7,8,10,12,14,16,18,20,23,26,28,31,34,38,41,45,49,53,57,62,67,72,77,83,89,96,103,110,118,126,135,144,153,164,174,186,198],"mel_count":[3,3,3,3,4,4,4,4,4,5,6,5,5,6,7,7,7,8,8,8,9,10,10,10,11,12,13,14,14,15,16,17,18,18,20,21,22,24,25,26],"mel_weight":[9344,32703,10757,22010,22079,1228,10688,31539,14228,18539,27597,8986,5170,23781,23672,6088,9095,26679,21906,5293,10861,27474,22072,6376,10695,26391,23962,9133,8805,23634,27385,13375,5382,19392,32167,18930,5694,600,13837,27073,25641,13135,630,7126,19632,32137,21547,9732,11220,23035,30799,19636,8473,1968,13131,24294,30226,19680,9134,2541,13087,23633,31432,21468,11504,1541,1335,11299,21263,31226,24809,15395,5981,7958,17372,26786,29524,20630,11736,2843,3243,12137,21031,29924,27050,18647,10244,1841,5717,14120,22523,30926,26568,18629,10690,2752,6199,14138,22077,30015,27866,20366,12865,5365,4901,12401,19902,27402,30750,23663,16577,9491,2405,2017,9104,16190,23276,30362,28344,21649,14954,8259,1564,4423,11118,17813,24508,31203,27919,21594,15269,8944,2618,4848,11173,17498,23823,30149,29265,23289,17313,11337,5361,3502,9478,15454,21430,27406,32186,26540,20894,15248,9602,3956,581,6227,11873,17519,23165,28811,31170,25836,20502,15168,9833,4499,1597,6931,12265,17599,22934,28268,31978,26938,21899,16859,11819,6780,1740,789,5829,10868,15908,20948,25987,31027,29650,24888,20127,15366,10604,5843,1081,3117,7879,12640,17401,22163,26924,31686,29290,24792,20293,15795,11296,6798,2299,3477,7975,12474,16972,21471,25969,30468,30689,26439,22189,17939,13689,9439,5189,939,2078,6328,10578,14828,19078,23328,27578,31828,29639,25623,21608,17593,13577,9562,5547,1531,3128,7144,11159,15174,19190,23205,27220,31236,30420,26626,22833,19039,15245,11452,7658,3865,71,2347,6141,9934,13728,17522,21315,25109,28902,32696,29250,25666,22081,18497,14913,11329,7745,4161,576,3517,7101,10686,14270,17854,21438,25022,28606,32191,29925,26539,23153,19767,16380,12994,9608,6222,2835,2842,6228,9614,13000,16387,19773,23159,26545,29932,32247,29047,25848,22649,19450,16250,13051,9852,6652,3453,254,520,3720,6919,10118,13317,16517,19716,22915,26115,29314,32513,29984,26962,23939,20917,17894,14871,11849,8826,5804,2781,2783,5805,8828,11850,14873,17896,20918,23941,26963,29986,32539,29683,26827,23972,21116,18260,15405,12549,9693,6837,3982,1126,228,3084,5940,8795,11651,14507,17362,20218,23074,25930,28785,31641,31133,28435,25737,23039,20341,17643,14945,12247,9549,6851,4153,1455,1634,4332,7030,9728,12426,15124,17822,20520,23218,25916,28614,31312,31592,29043,26494,23945,21396,18847,16298,13749,11200,8651,6102,3553,1004,1175,3724,6273,8822,11371,13920,16469,19018,21567,24116,26665,29214,31763,31307,28899,26491,24083,21674,19266,16858,14450,12041,9633,7225,4817,2408]};
 
-system: {
-  title: "System overview",
-  lead: "Sound reaches the PDM microphone, the Cmod A7 board turns it into a class label, and the PC talks to the board over one USB cable. The hydrophone path (dashed) comes later and shares the same processing chain.",
-  h: 560,
-  extra: `<h4>Build roadmap</h4>
-    <table><tr><th>Phase</th><th>Milestone on the board</th></tr>
-    <tr><td>0 ✓</td><td>Board test: JTAG, UART, LEDs, buttons, XADC verified</td></tr>
-    <tr><td>1 ✓</td><td>MicroBlaze V shell: <code>status</code> command, LEDs, temperature, 115200-baud link</td></tr>
-    <tr><td>2 ✓</td><td>Mic → 16 kHz audio, level meter, test tone, record WAV on the PC</td></tr>
-    <tr><td>3 ✓</td><td>Spectrum engine + software mel/log, live spectrogram on the PC</td></tr>
-    <tr><td>4</td><td>int8 CNN classifier running twice per second</td></tr>
-    <tr><td>5</td><td>Event gate, smoothing, boot from flash, self-test</td></tr>
-    <tr><td>6</td><td>Hydrophone: I2S ADC, DEMON, LOFAR, SRAM capture</td></tr></table>
-    <h4>Classes (v1)</h4><p>Speech · vehicle/engine · machinery/tools · alarm/siren · background, plus "unknown" when confidence is low.</p>`,
-  groups: [
-    { x: 250, y: 40, w: 470, h: 330, label: "Digilent Cmod A7-35T board" },
-    { x: 20, y: 400, w: 700, h: 140, label: "Future: underwater input" }
-  ],
-  nodes: [
-    { id: "mic", x: 20, y: 140, w: 150, h: 70, kind: "hw", label: "PDM MEMS mic", sub: "Adafruit 3492",
-      purpose: "Converts sound pressure into a 1-bit pulse-density (PDM) stream.",
-      details: ["The FPGA supplies a 2.4 MHz clock on CLK and the mic returns one bit per clock on DAT. The density of 1s follows the sound pressure.",
-                "SEL is tied to GND, so the mic drives DAT during one half of each clock period and releases it for the other half. The FPGA samples late in the driven half, at a programmable point."],
-      params: ["Clock 1–3.25 MHz (we use 2.4 MHz)", "SNR 61 dB, sensitivity −26 dBFS (noise floor about −87 dBFS)", "1.8–3.3 V, 0.6 mA"],
-      io: ["Wired to the Cmod Pmod header: 3V3, GND, CLK, DAT (SEL → GND)"] },
-    { id: "fpga", x: 280, y: 110, w: 220, h: 130, kind: "hdl", label: "Artix-7 FPGA", sub: "XC7A35T-1CPG236C", open: "fpga",
-      purpose: "Runs the whole design: audio front-end, spectrum engine, the MicroBlaze V processor and all interfaces.",
-      details: ["Open it to see the modules inside the chip."],
-      params: ["20,800 LUTs · 41,600 flip-flops", "50 block RAMs (225 KB) · 90 DSP slices", "1 XADC (on-chip ADC + temperature sensor)"] },
-    { id: "osc", x: 530, y: 70, w: 170, h: 56, kind: "hw", label: "12 MHz oscillator", sub: "pin L17",
-      purpose: "Reference clock for the FPGA.",
-      details: ["An MMCM (clock synthesizer) inside the FPGA multiplies it to 96 MHz. Every other clock (the mic clock, the UART, the future ADC master clock) is derived from 96 MHz, so the design has a single clock domain."] },
-    { id: "sram", x: 530, y: 145, w: 170, h: 56, kind: "hw", label: "512 KB SRAM", sub: "IS61WV5128, 8-bit",
-      purpose: "External memory for raw audio capture buffers (hydrophone phase).",
-      details: ["Not used in v1. Model weights stay in on-chip RAM: over the 8-bit bus each 32-bit read costs about 20–30 processor cycles, which would slow inference several times."],
-      params: ["10 ns asynchronous SRAM", "19 address bits, 8 data bits"] },
-    { id: "qspi", x: 530, y: 220, w: 170, h: 56, kind: "hw", label: "4 MB QSPI flash", sub: "configuration memory",
-      purpose: "Stores the FPGA bitstream, with the firmware built in, so the board boots on its own.",
-      details: ["The compressed bitstream is about 2.2 MB. The spare space can hold alternative model weight sets (for example, the hydrophone model).",
-                "During development the design is loaded over JTAG instead, which is faster but lost at power-off."] },
-    { id: "ftdi", x: 280, y: 280, w: 220, h: 70, kind: "hw", label: "FT2232H USB bridge", sub: "JTAG + UART",
-      purpose: "One USB cable gives two channels: JTAG (programming and debug) and a serial port (COM port on the PC).",
-      params: ["UART fixed at 115,200 baud", "Only TX/RX are wired, so there is no hardware flow control", "JTAG used by Vivado and the MicroBlaze debugger"] },
-    { id: "io", x: 530, y: 295, w: 170, h: 56, kind: "hw", label: "LEDs + buttons", sub: "2 LEDs, RGB, 2 buttons",
-      purpose: "Local status display and user input.",
-      details: ["Planned mapping: the RGB colour shows the detected class, LD1 is a heartbeat, LD2 lights on a detected sound event, BTN0 toggles streaming, BTN1 forces a status dump."] },
-    { id: "pc", x: 790, y: 250, w: 190, h: 90, kind: "pc", label: "PC host software", sub: "Python + serial", open: "host",
-      purpose: "Talks to the board: status, live monitoring, recording and injecting audio, and training the classifier.",
-      details: ["Open it to see the PC-side tools."] },
-    { id: "hydro", x: 40, y: 450, w: 170, h: 70, kind: "hw", label: "Hydrophone", sub: "future", future: true, open: "hydro",
-      purpose: "Underwater microphone for ship and boat noise.",
-      details: ["Planned second input. It feeds the same filters and FFT as the air mic, with a different profile. Open it for the hydrophone processing."] },
-    { id: "preamp", x: 260, y: 450, w: 170, h: 70, kind: "hw", label: "Preamp + filter", sub: "future", future: true,
-      purpose: "Boosts the tiny hydrophone signal to line level and removes frequencies above half the sample rate (anti-aliasing) before the ADC." },
-    { id: "i2s2", x: 480, y: 450, w: 200, h: 70, kind: "hw", label: "Pmod I2S2 ADC", sub: "CS5343, 24-bit", future: true,
-      purpose: "24-bit audio ADC on a Pmod module; sends samples to the FPGA over I2S.",
-      params: ["I2S slave: the FPGA drives MCLK = 96 MHz ÷ 8 = 12.000 MHz, plus SCLK and LRCK", "Sample rate 12 MHz ÷ 256 = 46.875 kHz (datasets are resampled to match)", "Plugs into the Cmod Pmod header"] }
-  ],
-  edges: [
-    { from: "fpga", to: "mic", fromSide: "l", toSide: "r", label: "CLK 2.4 MHz", dy: -16, tdy: -16 },
-    { from: "mic", to: "fpga", fromSide: "r", toSide: "l", label: "DAT (PDM)", dy: 16, tdy: 16, labelBelow: true },
-    { from: "osc", to: "fpga", fromSide: "l", toSide: "r", tdy: -40 },
-    { from: "fpga", to: "sram", fromSide: "r", toSide: "l", future: true },
-    { from: "fpga", to: "qspi", fromSide: "r", toSide: "l", dy: 30 },
-    { from: "fpga", to: "ftdi", fromSide: "b", toSide: "t", label: "UART + JTAG" },
-    { from: "fpga", to: "io", fromSide: "r", toSide: "l", dy: 50 },
-    { from: "ftdi", to: "pc", fromSide: "b", toSide: "b", label: "USB cable", bus: true, via: [[390, 378], [885, 378]] },
-    { from: "hydro", to: "preamp", fromSide: "r", toSide: "l", future: true },
-    { from: "preamp", to: "i2s2", fromSide: "r", toSide: "l", future: true },
-    { from: "i2s2", to: "fpga", fromSide: "t", toSide: "l", tdy: 40, label: "I2S", future: true, via: [[580, 392], [232, 392], [232, 215]] }
-  ]
-},
-
-fpga: {
-  title: "Inside the FPGA",
-  lead: "Top-level HDL modules, all in one 96 MHz clock domain. Audio flows left to right into the spectrum engine; the processor reads each spectrum, computes features, classifies, and reports over the UART.",
-  h: 620,
-  extra: `<h4>Resource budget (estimate)</h4>
-    <table><tr><th>Block</th><th>LUT</th><th>BRAM</th><th>DSP</th></tr>
-    <tr><td>MicroBlaze V + debug</td><td>2.8k</td><td>0</td><td>4</td></tr>
-    <tr><td>Local memory 128 KB</td><td>0.2k</td><td>32</td><td>0</td></tr>
-    <tr><td>AXI, INTC, timer, GPIO</td><td>1.1k</td><td>0</td><td>0</td></tr>
-    <tr><td>UART (4 KB FIFO) + registers</td><td>0.5k</td><td>1</td><td>0</td></tr>
-    <tr><td>PDM + CIC</td><td>0.35k</td><td>0</td><td>0</td></tr>
-    <tr><td>FIRs, DC block, gain, meter</td><td>0.9k</td><td>1</td><td>3</td></tr>
-    <tr><td>Sources, test tone, injection, I2S</td><td>0.35k</td><td>1</td><td>0</td></tr>
-    <tr><td>Framer + window</td><td>0.25k</td><td>1.5</td><td>1</td></tr>
-    <tr><td>FFT (≤2048 pt) + power</td><td>1.15k</td><td>4</td><td>5</td></tr>
-    <tr><td>DEMON</td><td>0.5k</td><td>1.5</td><td>2</td></tr>
-    <tr><td><b>Total</b></td><td><b>8.3k (40%)</b></td><td><b>42 / 50</b></td><td><b>15 (17%)</b></td></tr></table>
-    <p class="hint">Measured after phase 3 (processor, front-end, FFT): 4.1k LUTs (20%), 39 / 50 block RAMs, 12 DSPs, timing met at 96 MHz.</p>
-    <p class="hint">Block RAM is the scarce resource, which is why the mel filterbank, log and feature history run in processor memory instead of fabric.</p>`,
-  groups: [
-    { x: 20, y: 40, w: 960, h: 250, label: "Streaming DSP (fabric)" },
-    { x: 20, y: 320, w: 960, h: 280, label: "Control and I/O" }
-  ],
-  nodes: [
-    { id: "pdm_if", x: 40, y: 80, w: 150, h: 60, kind: "hdl", label: "PDM interface", sub: "clock gen + capture",
-      purpose: "Generates the mic clock and captures its data bits.",
-      details: ["Makes the 2.4 MHz PDM clock by counting 96 MHz cycles (20 high, 20 low), drives it to the mic, and captures DAT through a synchronizer at a programmable phase (0–39 system clocks), late in the half-period when the mic is driving.",
-                "A self-test sweeps the capture phase to find the valid window. Output is held for about 200 ms after enable while the mic, CIC and DC blocker settle."],
-      params: ["96 MHz ÷ 40 = 2.4 MHz, 50% duty", "Output: ±1 sample + valid strobe"] },
-    { id: "i2s_rx", x: 40, y: 160, w: 150, h: 50, kind: "hdl", label: "I2S receiver", sub: "future", future: true,
-      purpose: "Receives 24-bit samples from the Pmod I2S2 ADC for the hydrophone.",
-      details: ["Forwards MCLK = 96 MHz ÷ 8 = 12 MHz through an output DDR register, generates SCLK and LRCK (46.875 kHz), and de-serializes 24-bit samples. Fully synchronous with the rest of the design.",
-                "Joins the pipeline at the ~48 kHz point after the half-band filter, so everything downstream is shared."] },
-    { id: "tone", x: 40, y: 225, w: 150, h: 50, kind: "hdl", label: "Test sources", sub: "tone + PC injection",
-      purpose: "Signal sources for testing without a microphone.",
-      details: ["A test-tone generator (sine lookup) for the boot self-test: the processor checks that the FFT peak lands in the expected bin.",
-                "PC audio injection: the PC streams a recording over the UART into the pipeline in place of the mic, at about a third of real time over the 115200-baud link (the pipeline simply waits for samples). This is the most valuable test hook: dataset clips run through the real hardware, bit-exact, so the board's output can be compared with the PC model."] },
-    { id: "front", x: 230, y: 90, w: 190, h: 110, kind: "hdl", label: "Audio front-end", sub: "2.4 MHz → 16 kHz, 24-bit", open: "frontend",
-      purpose: "Turns the 1-bit PDM stream into clean 24-bit audio samples.",
-      details: ["CIC decimator, half-band and polyphase FIR filters, input selection, DC removal, gain and level metering. Open it for the individual filters."] },
-    { id: "feat", x: 460, y: 90, w: 190, h: 110, kind: "hdl", label: "Spectrum engine", sub: "window → FFT → power", open: "features",
-      purpose: "Computes the power spectrum of each 32 ms audio frame, 62.5 times per second.",
-      details: ["Framing, Hann window, FFT and magnitude-squared run in fabric. The mel filterbank and log run as software on the processor. Open it for the full feature path."] },
-    { id: "env", x: 460, y: 215, w: 190, h: 60, kind: "hdl", label: "Envelope / DEMON", sub: "modulation analysis", future: true,
-      purpose: "Finds slow periodic modulation of a sound, like an engine's firing rate or a propeller's blade rate.",
-      details: ["Band-pass filters the audio, takes its envelope (square-law), and decimates to a low rate. The processor then FFTs it to find the modulation frequency.",
-                "In air it helps separate engines from other mechanical noise. Underwater it is the standard DEMON analysis for identifying ships."] },
-    { id: "ring", x: 700, y: 90, w: 170, h: 80, kind: "hdl", label: "Spectrum buffer", sub: "dual-port BRAM + IRQ",
-      purpose: "Hands each finished spectrum to the processor.",
-      details: ["257 power bins per frame, written by the spectrum engine and read by the processor over the bus. An interrupt fires as each frame completes; the processor then reduces it to 40 mel bands in software."] },
-    { id: "cnt", x: 700, y: 190, w: 170, h: 60, kind: "hdl", label: "Level + stats", sub: "RMS, peak, clip count",
-      purpose: "Audio health numbers for the status report.",
-      details: ["Per-block RMS level, peak, clipping count, noise-floor estimate, and frame and overflow counters for every FIFO, all readable by the processor."] },
-    { id: "clk", x: 40, y: 360, w: 170, h: 70, kind: "ip", label: "Clocking wizard", sub: "MMCM 12 → 96 MHz",
-      purpose: "Makes the 96 MHz system clock from the 12 MHz oscillator.",
-      details: ["VCO = 12 MHz × 64 = 768 MHz, ÷8 = 96 MHz. Every other rate (2.4 MHz PDM, UART bit clock, 12 MHz ADC master clock) is a clean integer division of 96 MHz, so the whole design is one clock domain with no clock-crossing logic.",
-                "External inputs (PDM data, UART RX, buttons) are registered and synchronized at the pins."] },
-    { id: "cpu", x: 250, y: 360, w: 230, h: 110, kind: "cpu", label: "Processor subsystem", sub: "MicroBlaze V + AXI peripherals", open: "cpu",
-      purpose: "Runs the firmware: configures the DSP blocks, computes features, runs the classifier, and handles the serial interface.",
-      details: ["MicroBlaze V (AMD's RISC-V core) with 128 KB of on-chip memory, timer, interrupt controller and a bus to the DSP registers. Open it for the peripherals, then open the firmware."] },
-    { id: "regs", x: 520, y: 360, w: 180, h: 70, kind: "hdl", label: "Register bank", sub: "AXI4-Lite slave",
-      purpose: "The processor's window into the DSP pipeline.",
-      details: ["Control and status registers for every fabric block: source select, PDM capture phase, gain, FIR profile, FFT length, spectrum buffer, counters, interrupt status, and version registers holding the build's git hash."] },
-    { id: "uart", x: 520, y: 450, w: 180, h: 60, kind: "hdl", label: "UART", sub: "custom AXI, 115200 baud",
-      purpose: "Serial link to the PC through the FT2232H.",
-      details: ["Grown from the board test's verified uart.v: a 4 KB transmit FIFO and a divisor register. The link is fixed at 115,200 baud (96 MHz ÷ 833, 0.04% error), which any serial terminal can use.",
-                "At 115,200 baud the link carries about 11 kB/s: enough for status, class results and mel frames (about 6.5 kB/s), but not live 16 kHz audio (32 kB/s), which is captured to memory first and uploaded afterwards."],
-      params: ["16 kHz audio needs about 336 kbit/s; mel frames about 53 kbit/s", "Packets: COBS framing + CRC16 + sequence number"] },
-    { id: "xadc", x: 740, y: 360, w: 220, h: 60, kind: "ip", label: "XADC monitor", sub: "temp + supply voltages",
-      purpose: "On-chip sensor readings for the status report.",
-      details: ["Die temperature (measured at about 40 °C in the board test) and core supply voltage."] },
-    { id: "gpio", x: 740, y: 440, w: 220, h: 60, kind: "ip", label: "GPIO", sub: "LEDs, RGB, buttons",
-      purpose: "Drives the LEDs and reads the buttons under firmware control." },
-    { id: "sramc", x: 740, y: 520, w: 220, h: 60, kind: "ip", label: "SRAM controller", sub: "AXI EMC → 512 KB", future: true,
-      purpose: "Lets the processor use the external SRAM.",
-      details: ["Deferred to the hydrophone phase, for long raw-audio captures (10 s of 16 kHz audio is 320 KB). Short v1 captures fit in processor memory and upload over the 115200-baud UART instead."] },
-    { id: "jtag", x: 40, y: 470, w: 170, h: 60, kind: "ip", label: "Debug module", sub: "MDM over JTAG",
-      purpose: "Lets the PC load firmware and debug the processor over the same USB cable.",
-      details: ["New firmware downloads in about 5 seconds with xsdb, with no FPGA rebuild."] }
-  ],
-  edges: [
-    { from: "pdm_if", to: "front", fromSide: "r", toSide: "l", tdy: -25, label: "±1" },
-    { from: "i2s_rx", to: "front", fromSide: "r", toSide: "l", future: true, tdy: 5 },
-    { from: "tone", to: "front", fromSide: "r", toSide: "l", tdy: 35 },
-    { from: "front", to: "feat", fromSide: "r", toSide: "l", label: "16 kHz" },
-    { from: "front", to: "env", fromSide: "b", toSide: "l", future: true },
-    { from: "feat", to: "ring", fromSide: "r", toSide: "l", label: "257 bins", tdy: 15 },
-    { from: "front", to: "cnt", fromSide: "t", toSide: "r", via: [[325, 62], [900, 62], [900, 220]], label: "levels" },
-    { from: "regs", fromSide: "t", toPoint: [610, 305], bus: true },
-    { fromPoint: [110, 305], toPoint: [930, 305], bus: true, label: "control / status registers to every DSP block" },
-    { from: "cpu", to: "regs", fromSide: "r", toSide: "l", bus: true, label: "AXI", dy: -20 },
-    { from: "cpu", to: "uart", fromSide: "r", toSide: "l", bus: true, dy: 35 },
-    { from: "regs", to: "xadc", fromSide: "r", toSide: "l", bus: true },
-    { from: "regs", to: "gpio", fromSide: "r", toSide: "l", bus: true, dy: 25 },
-    { from: "cpu", to: "sramc", fromSide: "b", toSide: "l", bus: true, future: true, via: [[365, 585], [720, 585], [720, 550]] },
-    { from: "clk", to: "cpu", fromSide: "r", toSide: "l", label: "96 MHz", tdy: -20 },
-    { from: "jtag", to: "cpu", fromSide: "r", toSide: "l", tdy: 30 }
-  ]
-},
-
-frontend: {
-  title: "Audio front-end",
-  lead: "Decimation chain: 2.4 MHz 1-bit PDM → 96 kHz → 48 kHz → 16 kHz, kept at 24 bits. Each stage lowers the sample rate and removes frequencies that would otherwise fold back (alias) into the audio band.",
-  h: 470,
-  groups: [{ x: 20, y: 40, w: 960, h: 190, label: "Decimation (fixed-point, streaming)" },
-           { x: 20, y: 260, w: 960, h: 190, label: "Conditioning (16 kHz, 24-bit)" }],
-  nodes: [
-    { id: "cap", x: 40, y: 90, w: 130, h: 80, kind: "hdl", label: "PDM capture", sub: "±1 at 2.4 MHz",
-      purpose: "Maps each PDM bit to +1 or −1 for the filters.",
-      details: ["Discards about 200 ms after enable while the mic settles, and flags a missing mic (a stream stuck at all 0s or all 1s) in the status."] },
-    { id: "cic", x: 230, y: 90, w: 150, h: 80, kind: "hdl", label: "CIC decimator", sub: "5th order, ÷25 → 96 kHz",
-      purpose: "Cheap first-stage decimation, 2.4 MHz → 96 kHz, using only adders (no multipliers).",
-      details: ["Five integrators at 2.4 MHz, a ÷25 downsample, then five comb stages. Rejects the PDM modulator's high-frequency noise: about −105 dB at 88 kHz, the band that would fold onto 8 kHz.",
-                "Its gain of 25⁵ ≈ 2²³·²² is removed with a 23-bit shift, and the leftover factor is folded into the FIR. Its pass-band droop (−0.37 dB at 7 kHz) is corrected by the last FIR."],
-      params: ["Bit growth 5 · log2(25) ≈ 23.2 → 26-bit registers", "0 DSP slices, about 350 LUTs"] },
-    { id: "hb", x: 440, y: 90, w: 140, h: 80, kind: "hdl", label: "Half-band FIR", sub: "÷2 → 48 kHz",
-      purpose: "Halves the rate efficiently: in a half-band filter almost every other coefficient is zero.",
-      details: ["Pass-band to 20 kHz, stop-band from 28 kHz. The 48 kHz output is the shared tap point where the future hydrophone input joins."],
-      params: ["About 33 taps, 1 DSP slice (time-shared at 96 MHz)"] },
-    { id: "pfir", x: 640, y: 90, w: 140, h: 80, kind: "hdl", label: "Polyphase FIR", sub: "÷3 → 16 kHz",
-      purpose: "Final low-pass and ÷3 decimation, with the CIC droop correction built into its coefficients.",
-      details: ["Pass-band to 7 kHz with at least 60 dB rejection from 8 kHz. The mel bands therefore stop at 7 kHz, so the filter's transition region never reaches the features.",
-                "Polyphase form computes only the outputs that are kept: one DSP slice has 6,000 clocks per output sample for about 130 taps. Coefficients are in block RAM, so the processor can select a different profile (such as a 48 kHz bypass for the hydrophone)."],
-      params: ["About 130 taps (44 per phase), 1 DSP slice, 1 block RAM"] },
-    { id: "mux", x: 840, y: 90, w: 130, h: 80, kind: "hdl", label: "Source select", sub: "mic / I2S / tone / PC",
-      purpose: "Chooses which input feeds the rest of the pipeline.",
-      details: ["The mic through the decimation chain, the future I2S hydrophone ADC, the test tone, or audio injected from the PC over the UART."] },
-    { id: "dc", x: 40, y: 310, w: 170, h: 80, kind: "hdl", label: "DC blocker", sub: "~20 Hz high-pass",
-      purpose: "Removes the mic's DC offset and very low-frequency rumble.",
-      details: ["First-order IIR: y[n] = x[n] − x[n−1] + a·y[n−1], at 24-bit precision."] },
-    { id: "gain", x: 250, y: 310, w: 170, h: 80, kind: "hdl", label: "Gain", sub: "+18 to +24 dB, saturating",
-      purpose: "Brings quiet sounds up before the FFT, with saturation instead of wrap-around.",
-      details: ["The mic's noise floor sits near −87 dBFS, only about 1.5 counts at 16 bits. Keeping 24 bits through the filters and adding gain before the FFT's 18-bit input preserves quiet detail."] },
-    { id: "lvl", x: 460, y: 310, w: 170, h: 80, kind: "hdl", label: "Level meter", sub: "RMS / peak / clip",
-      purpose: "Measures loudness for the status report and the event detector.",
-      details: ["RMS and peak over 64 ms blocks, a clip counter, and a slow noise-floor tracker, so the firmware can tell quiet from activity."] },
-    { id: "cap16", x: 670, y: 310, w: 170, h: 80, kind: "hdl", label: "Capture tap", sub: "PCM to the PC",
-      purpose: "A copy of the 16 kHz audio for recording on the PC.",
-      details: ["Lets the PC record exactly what the classifier hears. These recordings become training data for the real mic and room."] },
-    { id: "out", x: 860, y: 310, w: 100, h: 80, kind: "hdl", label: "→ Spectrum", sub: "16 kHz",
-      purpose: "Output to the spectrum engine." }
-  ],
-  edges: [
-    { from: "cap", to: "cic", fromSide: "r", toSide: "l", label: "2.4 MHz" },
-    { from: "cic", to: "hb", fromSide: "r", toSide: "l", label: "96 kHz" },
-    { from: "hb", to: "pfir", fromSide: "r", toSide: "l", label: "48 kHz" },
-    { from: "pfir", to: "mux", fromSide: "r", toSide: "l", label: "16 kHz" },
-    { from: "mux", to: "dc", fromSide: "b", toSide: "t", via: [[905, 250], [125, 250]] },
-    { from: "dc", to: "gain", fromSide: "r", toSide: "l" },
-    { from: "gain", to: "lvl", fromSide: "r", toSide: "l" },
-    { from: "lvl", to: "cap16", fromSide: "r", toSide: "l" },
-    { from: "cap16", to: "out", fromSide: "r", toSide: "l" }
-  ]
-},
-
-features: {
-  title: "Feature extraction",
-  lead: "16 kHz audio → log-mel spectrogram: 40 frequency bands every 16 ms, the standard input for sound classifiers in the research literature (ESC-50, UrbanSound8K, DCASE). The heavy FFT work is in fabric; the band reduction is cheap software.",
-  h: 470,
-  groups: [{ x: 20, y: 40, w: 960, h: 190, label: "Fabric: spectrum engine (512-sample frames, 16 ms hop)" },
-           { x: 20, y: 260, w: 960, h: 190, label: "Software on the MicroBlaze V" }],
-  nodes: [
-    { id: "frm", x: 40, y: 90, w: 150, h: 80, kind: "hdl", label: "Framer", sub: "2048-sample circular buffer",
-      purpose: "Cuts the audio into overlapping 512-sample (32 ms) frames, one every 256 samples.",
-      details: ["A circular buffer in block RAM lets frames overlap by 50% without copying data, and supports longer frames for the hydrophone profile."] },
-    { id: "win", x: 230, y: 90, w: 140, h: 80, kind: "hdl", label: "Hann window", sub: "coefficient ROM",
-      purpose: "Tapers each frame's edges to reduce spectral leakage in the FFT.",
-      params: ["1 DSP multiply"] },
-    { id: "fft", x: 410, y: 90, w: 150, h: 80, kind: "hdl", label: "FFT", sub: "custom radix-2, 512-pt",
-      purpose: "Converts each frame to 257 frequency bins (31.25 Hz spacing).",
-      details: ["In-place radix-2 decimation-in-time: samples are loaded in bit-reversed order, then 9 stages of 256 butterflies, one butterfly every 5 clocks (about 12,000 clocks per frame; a new frame arrives every 1.5 million clocks).",
-                "Written in-house instead of using AMD's FFT IP so that it is bit-exact with a short Python model (model/spectrum.py) and simulates without generated IP files. Verified bit-exact in simulation and on the board."],
-      params: ["25-bit data, 18-bit twiddles, divide by 2 per stage", "Two 25-bit dual-port block RAMs (real, imaginary), 4 DSP slices"] },
-    { id: "pwr", x: 600, y: 90, w: 130, h: 80, kind: "hdl", label: "Power", sub: "re² + im²",
-      purpose: "Magnitude-squared of each FFT bin: energy per frequency.",
-      params: ["2 DSP slices"] },
-    { id: "sbuf", x: 800, y: 90, w: 160, h: 80, kind: "hdl", label: "Spectrum buffer", sub: "dual-port BRAM + IRQ",
-      purpose: "Holds the finished spectrum until the processor reads it; an interrupt signals each new frame." },
-    { id: "mel", x: 40, y: 310, w: 200, h: 80, kind: "sw", label: "Mel filterbank", sub: "40 bands, 50 Hz – 7 kHz",
-      purpose: "Sums bin energies into 40 bands spaced like human pitch perception: fine at low frequencies, coarse at high.",
-      details: ["Sparse triangular weights: each bin feeds at most two bands, so it is about 500 multiply-adds per frame. That is under 1% of the processor.",
-                "For the hydrophone the table is swapped for linear or LOFAR bands. Same code, different table."] },
-    { id: "log", x: 290, y: 310, w: 170, h: 80, kind: "sw", label: "Log", sub: "fixed-point log2",
-      purpose: "Compresses the huge dynamic range into decibel-like values, close to how loudness is perceived.",
-      details: ["Leading-one position (integer part) plus a small lookup table (fraction), bit-identical to the PC golden model."] },
-    { id: "hist", x: 510, y: 310, w: 190, h: 80, kind: "sw", label: "Feature history", sub: "64 frames = 1 s, 5 KB",
-      purpose: "Sliding window of the last second of log-mel frames: the classifier's input." },
-    { id: "cls", x: 750, y: 310, w: 210, h: 80, kind: "sw", label: "→ Classifier", sub: "every 0.5 s", open: "firmware",
-      purpose: "Passes the 40 × 64 window to the CNN in the firmware. Open the firmware view for the classifier and decision logic." }
-  ],
-  edges: [
-    { from: "frm", to: "win", fromSide: "r", toSide: "l" },
-    { from: "win", to: "fft", fromSide: "r", toSide: "l" },
-    { from: "fft", to: "pwr", fromSide: "r", toSide: "l" },
-    { from: "pwr", to: "sbuf", fromSide: "r", toSide: "l", label: "257 bins" },
-    { from: "sbuf", to: "mel", fromSide: "b", toSide: "t", via: [[880, 250], [140, 250]], label: "IRQ + read over AXI" },
-    { from: "mel", to: "log", fromSide: "r", toSide: "l", label: "40 bands" },
-    { from: "log", to: "hist", fromSide: "r", toSide: "l" },
-    { from: "hist", to: "cls", fromSide: "r", toSide: "l" }
-  ]
-},
-
-cpu: {
-  title: "Processor subsystem",
-  lead: "A MicroBlaze V (RISC-V) processor on an AXI bus, built from a scripted Vivado block design. Firmware is compiled with a plain Makefile and the RISC-V GCC installed with Vitis.",
-  h: 470,
-  extra: `<h4>Firmware workflow</h4><ul>
-    <li><b>Build:</b> <code>make</code> with GCC 13 (<code>-march=rv32imc_zicsr_zifencei</code>); the address map header is generated from the block design.</li>
-    <li><b>Develop:</b> xsdb downloads the program over JTAG in about 5 s, with no FPGA rebuild.</li>
-    <li><b>Release:</b> <code>updatemem</code> bakes the program into the bitstream, which then goes into the QSPI flash.</li></ul>`,
-  nodes: [
-    { id: "mbv", x: 40, y: 60, w: 220, h: 110, kind: "cpu", label: "MicroBlaze V", sub: "RV32IMC, 96 MHz",
-      purpose: "The soft-core CPU that runs the firmware.",
-      details: ["32-bit RISC-V with hardware multiply/divide, compressed instructions, barrel shifter and cycle counters, all explicitly enabled (multiply and compression are off by default).",
-                "No caches: it runs straight from on-chip block RAM with zero wait states."],
-      params: ["About 2.8k LUTs, 4 DSP slices", "CNN inference about 60–90 ms, twice per second = 11–18% CPU"] },
-    { id: "lmb", x: 40, y: 200, w: 220, h: 80, kind: "ip", label: "Local memory", sub: "LMB block RAM, 128 KB",
-      purpose: "Code, data, model and stack. The biggest user of block RAM in the design (32 of 50).",
-      details: ["Budget: code about 30 KB, int8 weights ≤32 KB, activation buffers about 24 KB, feature history 5 KB, stack 8 KB."] },
-    { id: "firm", x: 40, y: 310, w: 220, h: 90, kind: "sw", label: "Firmware", sub: "C, bare metal", open: "firmware",
-      purpose: "Software running on the MicroBlaze V.",
-      details: ["Open it to see the firmware modules."] },
-    { id: "axi", x: 330, y: 60, w: 70, h: 340, kind: "ip", label: "AXI", sub: "",
-      purpose: "AXI4-Lite interconnect: connects the CPU to all peripherals by address." },
-    { id: "uartp", x: 470, y: 60, w: 210, h: 60, kind: "hdl", label: "UART", sub: "custom, 115200 baud, 4 KB FIFO",
-      purpose: "Serial port to the PC for commands, status and streaming." },
-    { id: "tmr", x: 470, y: 135, w: 210, h: 60, kind: "ip", label: "Timer", sub: "AXI Timer",
-      purpose: "Time base for uptime, scheduling and CPU-load measurement." },
-    { id: "intc", x: 470, y: 210, w: 210, h: 60, kind: "ip", label: "Interrupt controller", sub: "AXI INTC",
-      purpose: "Collects interrupts: new spectrum frame, UART receive, timer, FIFO overflow." },
-    { id: "gpiop", x: 470, y: 285, w: 210, h: 60, kind: "ip", label: "GPIO", sub: "LEDs + buttons" },
-    { id: "emc", x: 470, y: 360, w: 210, h: 60, kind: "ip", label: "EMC", sub: "external SRAM", future: true,
-      purpose: "Access to the board SRAM for long captures (hydrophone phase)." },
-    { id: "dsp", x: 750, y: 60, w: 210, h: 110, kind: "hdl", label: "DSP register bank", sub: "front-end + spectrum",
-      purpose: "Custom AXI4-Lite slave: control, status, spectrum buffer window, PC-injection FIFO and version registers.",
-      details: ["The only link between the processor block design and the hand-written Verilog. The block design exports a single AXI master and the interrupt lines to the Verilog top level."] },
-    { id: "xadcp", x: 750, y: 200, w: 210, h: 60, kind: "ip", label: "XADC", sub: "temperature + VCCINT" },
-    { id: "mdm", x: 750, y: 285, w: 210, h: 60, kind: "ip", label: "MDM debug", sub: "JTAG",
-      purpose: "Firmware download and breakpoint debugging via xsdb over the USB cable." }
-  ],
-  edges: [
-    { from: "mbv", to: "lmb", fromSide: "b", toSide: "t", bus: true, label: "LMB" },
-    { from: "lmb", to: "firm", fromSide: "b", toSide: "t" },
-    { from: "mbv", to: "axi", fromSide: "r", toSide: "l", bus: true },
-    { from: "axi", to: "uartp", fromSide: "r", toSide: "l", bus: true, dy: -140 },
-    { from: "axi", to: "tmr", fromSide: "r", toSide: "l", bus: true, dy: -65 },
-    { from: "axi", to: "intc", fromSide: "r", toSide: "l", bus: true, dy: 10 },
-    { from: "axi", to: "gpiop", fromSide: "r", toSide: "l", bus: true, dy: 85 },
-    { from: "axi", to: "emc", fromSide: "r", toSide: "l", bus: true, future: true, dy: 160 },
-    { from: "axi", to: "dsp", fromSide: "t", toSide: "t", bus: true, via: [[365, 40], [855, 40]] },
-    { from: "axi", to: "xadcp", fromSide: "b", toSide: "l", bus: true, via: [[365, 440], [720, 440], [720, 230]] },
-    { from: "mbv", to: "mdm", fromSide: "t", toSide: "r", via: [[150, 22], [990, 22], [990, 315]] }
-  ]
-},
-
-firmware: {
-  title: "Firmware",
-  lead: "Bare-metal C on the MicroBlaze V. Event-driven: each spectrum frame arrives by interrupt and becomes a log-mel frame, and the classifier runs on the last second of frames every 0.5 s.",
-  h: 470,
-  extra: `<h4>Classifier network (DS-CNN, int8)</h4>
-    <table><tr><th>Layer</th><th>Output</th><th>MACs</th></tr>
-    <tr><td>Conv 3×3 /2, 1→16</td><td>16×20×32</td><td>92k</td></tr>
-    <tr><td>DW 3×3 + PW 16→32, pool</td><td>32×10×16</td><td>420k</td></tr>
-    <tr><td>DW 3×3 + PW 32→64, pool</td><td>64×5×8</td><td>374k</td></tr>
-    <tr><td>DW 3×3 + PW 64→64</td><td>64×5×8</td><td>187k</td></tr>
-    <tr><td>Global avg pool → FC 5</td><td>5</td><td>0.3k</td></tr>
-    <tr><td><b>Total</b></td><td>≈8.4k params</td><td><b>1.07M</b></td></tr></table>
-    <p class="hint">DW = depthwise, PW = pointwise convolution. The same C kernels compile on the PC as the bit-exact reference.</p>`,
-  nodes: [
-    { id: "boot", x: 40, y: 60, w: 190, h: 70, kind: "sw", label: "Init + self-test", sub: "at boot",
-      purpose: "Configures the peripherals and DSP registers, then runs a test-tone self-test (checks the FFT peak bin) and a PDM capture-phase sweep." },
-    { id: "isr", x: 40, y: 160, w: 190, h: 70, kind: "sw", label: "Frame ISR", sub: "spectrum interrupt",
-      purpose: "On each spectrum frame: reads the 257 bins, computes 40 mel bands and their log, and appends the frame to the feature history. Counts dropped frames." },
-    { id: "gate", x: 280, y: 160, w: 190, h: 70, kind: "sw", label: "Event gate", sub: "energy vs noise floor",
-      purpose: "Decides whether anything is happening. When it's quiet the answer is 'background' without running the network, and the noise estimate is updated." },
-    { id: "normz", x: 520, y: 160, w: 190, h: 70, kind: "sw", label: "Normalize", sub: "per-band mean/std",
-      purpose: "Scales features exactly as during training (statistics exported with the model)." },
-    { id: "cnn", x: 760, y: 160, w: 200, h: 70, kind: "sw", label: "CNN inference", sub: "int8 DS-CNN, 40 × 64",
-      purpose: "Small depthwise-separable convolutional network: one second of log-mel in, 5 class scores out.",
-      details: ["int8 weights and activations, int32 accumulators, per-channel rescaling, batch-norm folded into the weights. Plain C kernels, no TFLite Micro (too big for this memory).",
-                "About 1.07 million multiply-adds per inference: 60–90 ms at 96 MHz."],
-      params: ["Classes: speech, vehicle/engine, machinery/tools, alarm/siren, background"] },
-    { id: "smooth", x: 760, y: 280, w: 200, h: 70, kind: "sw", label: "Decision", sub: "smoothing + hysteresis",
-      purpose: "Averages recent results and reports a class only above a confidence threshold, otherwise 'unknown'. Hysteresis stops the output from flickering between classes." },
-    { id: "shell", x: 280, y: 280, w: 190, h: 70, kind: "sw", label: "Command shell", sub: "text over UART",
-      purpose: "Human-readable commands.",
-      details: ["status · levels · class · stream pcm|mel|spec|class|off · inject · set gain|source|phase|profile · selftest · baud · version"] },
-    { id: "pkt", x: 520, y: 280, w: 190, h: 70, kind: "sw", label: "Packet link", sub: "COBS + CRC16",
-      purpose: "Binary packets for high-rate data both ways: audio, mel frames, spectra, class results out; injected audio in.",
-      details: ["COBS framing (so a 0x00 byte always marks a packet boundary), a sequence number to detect loss, a sample counter, and CRC16. Uploads from the PC use credit-based flow control, because the cable has no hardware handshake."] },
-    { id: "stat", x: 40, y: 280, w: 190, h: 70, kind: "sw", label: "Status + health", sub: "uptime, load, temp",
-      purpose: "Collects the internal status the PC asks for.",
-      details: ["Uptime, CPU load, input source and level, clip count, noise floor, frames processed / dropped, FIFO overflows, last class and confidence, die temperature, supply voltage, build git hash."] },
-    { id: "leds", x: 40, y: 380, w: 190, h: 60, kind: "sw", label: "LED driver", sub: "class → RGB colour" }
-  ],
-  edges: [
-    { from: "boot", to: "isr", fromSide: "b", toSide: "t" },
-    { from: "isr", to: "gate", fromSide: "r", toSide: "l" },
-    { from: "gate", to: "normz", fromSide: "r", toSide: "l" },
-    { from: "normz", to: "cnn", fromSide: "r", toSide: "l" },
-    { from: "cnn", to: "smooth", fromSide: "b", toSide: "t" },
-    { from: "smooth", to: "pkt", fromSide: "l", toSide: "r" },
-    { from: "shell", to: "pkt", fromSide: "r", toSide: "l" },
-    { from: "stat", to: "shell", fromSide: "r", toSide: "l" },
-    { from: "stat", to: "leds", fromSide: "b", toSide: "t" }
-  ]
-},
-
-host: {
-  title: "PC host software",
-  lead: "Python tools that talk to the board and build the classifier. A bit-exact model of the FPGA pipeline keeps the training data and the hardware in agreement.",
-  h: 470,
-  nodes: [
-    { id: "ser", x: 40, y: 60, w: 200, h: 70, kind: "pc", label: "Serial link", sub: "pyserial, 115200 baud",
-      purpose: "Finds the board's COM port and handles both the text shell and the binary packets." },
-    { id: "cli", x: 290, y: 60, w: 200, h: 70, kind: "pc", label: "CLI", sub: "status · monitor · record · inject",
-      purpose: "Command-line tool: print status, watch classifications live, record audio to WAV, and inject WAV files into the pipeline." },
-    { id: "viz", x: 540, y: 60, w: 200, h: 70, kind: "pc", label: "Live view", sub: "spectrogram + class",
-      purpose: "Real-time plot of the spectrogram coming from the FPGA and the current class probabilities." },
-    { id: "gold", x: 40, y: 200, w: 200, h: 80, kind: "pc", label: "Golden model", sub: "bit-exact numpy + C",
-      purpose: "Python copy of every fixed-point stage: CIC, FIRs, window, FFT (AMD's C model), mel, log and the int8 CNN.",
-      details: ["Used twice: to compute training features exactly as the FPGA will, and as the reference that HDL simulations and on-board results are compared against."] },
-    { id: "data", x: 290, y: 200, w: 200, h: 80, kind: "pc", label: "Datasets", sub: "public + own recordings",
-      purpose: "Training audio.",
-      details: ["ESC-50 and UrbanSound8K (the standard environmental-sound benchmarks) for engines, tools, sirens and background; speech from Speech Commands / LibriSpeech; plus recordings made through the device itself so the model learns this mic and room."] },
-    { id: "train", x: 540, y: 200, w: 200, h: 80, kind: "pc", label: "Training", sub: "PyTorch",
-      purpose: "Trains the DS-CNN on golden-model features, with augmentation (background noise, gain, time shift), then quantization-aware fine-tuning for int8." },
-    { id: "exp", x: 790, y: 200, w: 180, h: 80, kind: "pc", label: "Export", sub: "int8 → C header",
-      purpose: "Writes the quantized weights and normalization tables for the firmware." },
-    { id: "eval", x: 290, y: 340, w: 450, h: 70, kind: "pc", label: "Evaluation", sub: "inject clips → compare board vs PC",
-      purpose: "Injects test clips into the board and checks that its outputs match the PC model bit for bit, then measures accuracy (confusion matrix) on clips played through the real mic." }
-  ],
-  edges: [
-    { from: "ser", to: "cli", fromSide: "r", toSide: "l" },
-    { from: "cli", to: "viz", fromSide: "r", toSide: "l" },
-    { from: "cli", to: "data", fromSide: "b", toSide: "t", label: "recordings" },
-    { from: "gold", to: "data", fromSide: "r", toSide: "l", label: "features" },
-    { from: "data", to: "train", fromSide: "r", toSide: "l" },
-    { from: "train", to: "exp", fromSide: "r", toSide: "l" },
-    { from: "exp", to: "eval", fromSide: "b", toSide: "r", via: [[880, 375]] },
-    { from: "gold", to: "eval", fromSide: "b", toSide: "l", via: [[140, 375]] }
-  ]
-},
-
-hydro: {
-  title: "Hydrophone path (future)",
-  lead: "Ship-noise recognition reuses the same pipeline with a different profile. Only the input receiver, the filter and band tables, and the network weights change.",
-  h: 440,
-  nodes: [
-    { id: "h1", x: 40, y: 60, w: 180, h: 70, kind: "hw", label: "Hydrophone + preamp", sub: "anti-alias filter", future: true },
-    { id: "h2", x: 260, y: 60, w: 180, h: 70, kind: "hw", label: "Pmod I2S2", sub: "CS5343, 24-bit", future: true,
-      purpose: "24-bit ADC, slave mode, MCLK 12 MHz from the FPGA, 46.875 kHz sample rate." },
-    { id: "h3", x: 480, y: 60, w: 180, h: 70, kind: "hdl", label: "I2S receiver", sub: "MCLK = 96 MHz ÷ 8", future: true },
-    { id: "h4", x: 720, y: 60, w: 240, h: 70, kind: "hdl", label: "Shared pipeline", sub: "same FIR / FFT / DEMON hardware",
-      purpose: "Nothing new in the fabric beyond the I2S receiver: the processor selects the hydrophone profile." },
-    { id: "lofar", x: 120, y: 220, w: 240, h: 90, kind: "hdl", label: "LOFAR profile", sub: "decimate to 4 kHz, 2048-pt FFT",
-      purpose: "Low-frequency analysis: reveals the steady tonal lines from ship machinery (engines, generators, pumps).",
-      details: ["Resolution comes from decimating first (÷12 to about 4 kHz), then a 2048-point FFT gives about 2 Hz bins. That is cheaper than a huge FFT at the full rate. The band table becomes linear instead of mel."] },
-    { id: "demon", x: 400, y: 220, w: 240, h: 90, kind: "hdl", label: "DEMON profile", sub: "envelope → low-rate FFT",
-      purpose: "Detects propeller cavitation modulation: shaft rate and blade rate, which identify a vessel's propulsion.",
-      details: ["Uses the Envelope / DEMON block, which is also useful in air for engine firing rates."] },
-    { id: "hcls", x: 680, y: 220, w: 260, h: 90, kind: "sw", label: "Ship classifier", sub: "trained on DeepShip / ShipsEar",
-      purpose: "Same CNN code with different weights, stored in the spare QSPI flash. Public datasets: DeepShip (cargo, passenger, tanker, tug; 32 kHz) and ShipsEar (Spanish Atlantic coast; 52.7 kHz)." },
-    { id: "sram2", x: 400, y: 340, w: 240, h: 70, kind: "hw", label: "SRAM capture", sub: "long recordings", future: true,
-      purpose: "The 512 KB SRAM holds long raw captures (48 kHz × 24-bit is 1.5 Mbit/s, beyond comfortable live streaming)." }
-  ],
-  edges: [
-    { from: "h1", to: "h2", fromSide: "r", toSide: "l", future: true },
-    { from: "h2", to: "h3", fromSide: "r", toSide: "l", label: "I2S", future: true },
-    { from: "h3", to: "h4", fromSide: "r", toSide: "l", label: "46.9 kHz", future: true },
-    { from: "h4", to: "lofar", fromSide: "b", toSide: "t", via: [[840, 170], [240, 170]] },
-    { from: "h4", to: "demon", fromSide: "b", toSide: "t", via: [[840, 170], [520, 170]] },
-    { from: "lofar", to: "hcls", fromSide: "b", toSide: "b", via: [[240, 330], [360, 330], [360, 420], [810, 420]] },
-    { from: "demon", to: "hcls", fromSide: "r", toSide: "l" },
-    { from: "demon", to: "sram2", fromSide: "b", toSide: "t", future: true }
-  ]
+// ------------------------------------------------------------------ maths for the charts
+const FPDM = 2.4e6, RCIC = 25;
+const cicMag = f => { const x = Math.PI * f / FPDM; return x === 0 ? 1 : Math.abs(Math.sin(RCIC * x) / (RCIC * Math.sin(x))) ** 5; };
+function firMag(h, f, fs) {
+  let re = 0, im = 0;
+  for (let n = 0; n < h.length; n++) { const a = -2 * Math.PI * f * n / fs; re += h[n] * Math.cos(a); im += h[n] * Math.sin(a); }
+  return Math.hypot(re, im);
 }
+const sum = a => a.reduce((s, v) => s + v, 0);
+const db = v => 20 * Math.log10(Math.max(v, 1e-9));
+const hbMag = f => firMag(DATA.hb, f, 96000) / sum(DATA.hb);
+const lpMag = f => firMag(DATA.lp, f, 48000) / sum(DATA.lp);
+const chainDb = f => db(cicMag(f) * hbMag(f) * lpMag(f));
+const range = (a, b, n) => Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+const fmt = (v, d = 0) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+// ------------------------------------------------------------------ chart helper (SVG strings)
+function plot(o) {
+  const W = 420, H = o.h || 210, L = 48, R = 12, T = 12, B = 36;
+  const lx = v => Math.log10(v);
+  const sx = v => L + (o.xlog ? (lx(v) - lx(o.x0)) / (lx(o.x1) - lx(o.x0)) : (v - o.x0) / (o.x1 - o.x0)) * (W - L - R);
+  const sy = v => T + (1 - (Math.min(Math.max(v, o.y0), o.y1) - o.y0) / (o.y1 - o.y0)) * (H - T - B);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria || ""}">`;
+  for (const b of o.bands || []) s += `<rect class="band" x="${sx(b[0])}" y="${T}" width="${sx(b[1]) - sx(b[0])}" height="${H - T - B}"/>`;
+  for (const t of o.yt) s += `<line class="gl" x1="${L}" x2="${W - R}" y1="${sy(t)}" y2="${sy(t)}"/><text class="tk" x="${L - 5}" y="${sy(t) + 3.5}" text-anchor="end">${(o.yf || (v => v))(t)}</text>`;
+  for (const t of o.xt) s += `<line class="gl" y1="${T}" y2="${H - B}" x1="${sx(t)}" x2="${sx(t)}"/><text class="tk" x="${sx(t)}" y="${H - B + 14}" text-anchor="middle">${(o.xf || (v => v))(t)}</text>`;
+  s += `<line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${H - B}"/><line class="ax" x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}"/>`;
+  for (const m of o.marks || []) s += `<line class="mk" x1="${sx(m[0])}" x2="${sx(m[0])}" y1="${T}" y2="${H - B}"/><text class="mkt" x="${sx(m[0]) + 3}" y="${T + 10 + (m[2] || 0)}">${m[1]}</text>`;
+  for (const se of o.series) {
+    const d = se.pts.map((p, i) => (i ? "L" : "M") + sx(p[0]).toFixed(1) + " " + sy(p[1]).toFixed(1)).join("");
+    s += `<path class="${se.cls || "s1"}" d="${d}"/>`;
+  }
+  s += `<text class="al" x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">${o.xl}</text>`;
+  s += `<text class="al" transform="translate(12 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`;
+  return s + "</svg>";
+}
+const kHz = v => (v / 1000) + "k";
+
+// ------------------------------------------------------------------ individual charts
+const charts = {
+  pdm() {
+    const N = 110, x = range(0, N - 1, N).map(n => 0.85 * Math.sin(2 * Math.PI * n / N));
+    let i1 = 0, i2 = 0, y = 1;
+    const bits = x.map(v => { i1 += v - y; i2 += i1 - y; y = i2 >= 0 ? 1 : -1; return y > 0 ? 1 : 0; });
+    const W = 420, H = 190, L = 10, R = 10, bw = (W - L - R) / N;
+    let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sine wave and its PDM pulse train">`;
+    const yc = 70, amp = 42;
+    s += `<line class="gl" x1="${L}" x2="${W - R}" y1="${yc}" y2="${yc}"/>`;
+    s += `<path class="s1" d="${x.map((v, i) => (i ? "L" : "M") + (L + i * bw).toFixed(1) + " " + (yc - v * amp).toFixed(1)).join("")}"/>`;
+    const avg = bits.map((_, i) => { let a = 0, c = 0; for (let k = i - 5; k <= i + 5; k++) if (k >= 0 && k < N) { a += bits[k] * 2 - 1; c++; } return a / c; });
+    s += `<path class="s2" d="${avg.map((v, i) => (i ? "L" : "M") + (L + i * bw).toFixed(1) + " " + (yc - v * amp).toFixed(1)).join("")}"/>`;
+    bits.forEach((b, i) => { if (b) s += `<rect x="${(L + i * bw + 0.5).toFixed(2)}" y="128" width="${(bw - 1.2).toFixed(2)}" height="34" rx="0.8" fill="var(--k-io)"/>`; });
+    s += `<line class="ax" x1="${L}" x2="${W - R}" y1="162" y2="162"/>`;
+    s += `<text class="al" x="${L}" y="122">PDM data pin: a mark for every 1</text><text class="al" x="${L}" y="182">time →  (${N} clocks = ${(N / 2.4).toFixed(0)} µs; a real tone is much slower)</text>`;
+    s += `<text class="tk" x="${L}" y="12" style="fill:var(--k-dsp)">— sound</text><text class="tk" x="${L + 60}" y="12" style="fill:var(--k-out)">— density of 1s</text>`;
+    return s + "</svg>" + `<p class="cap">Where the sound pressure is high the mic sends mostly 1s, where it is low mostly 0s. Averaging the bits (red) recovers the sound (blue). Simulated with a 2nd-order modulator, like the one in the mic.</p>`;
+  },
+  phase() {
+    const W = 420, H = 150, L = 60, per = 40, n = 80, dx = (W - L - 10) / n;
+    let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="PDM clock timing and capture point">`;
+    const wave = (y0, f) => { let d = ""; for (let i = 0; i <= n; i++) { const v = f(i); d += (i ? "L" : "M") + (L + i * dx).toFixed(1) + " " + (y0 - v * 22) + (i < n ? "L" + (L + (i + 1) * dx).toFixed(1) + " " + (y0 - v * 22) : ""); } return d; };
+    s += `<text class="al" x="4" y="36">96 MHz</text>`;
+    for (let i = 0; i <= n; i += 4) s += `<line class="gl" x1="${L + i * dx}" x2="${L + i * dx}" y1="16" y2="${H - 22}"/>`;
+    s += `<text class="al" x="4" y="66">pdm_clk</text><path class="s1" d="${wave(72, i => (i % per) < 20 ? 1 : 0)}"/>`;
+    s += `<text class="al" x="4" y="108">capture</text>`;
+    for (const c of [14, 54]) s += `<line x1="${L + c * dx}" x2="${L + c * dx}" y1="86" y2="112" stroke="var(--k-out)" stroke-width="2.5"/><text class="mkt" x="${L + c * dx + 4}" y="100">cycle ${c % per}</text>`;
+    s += `<text class="tk" x="${L}" y="${H - 6}">0</text><text class="tk" x="${L + 40 * dx}" y="${H - 6}" text-anchor="middle">40 cycles = 1 bit</text><text class="tk" x="${L + 80 * dx}" y="${H - 6}" text-anchor="end">80</text>`;
+    for (let i = 0; i < n; i += 1) if (i % 4 === 0) s += `<rect x="${L + i * dx}" y="26" width="${dx * 2}" height="8" fill="var(--grid)"/>`;
+    return s + "</svg>" + `<p class="cap">The mic clock is 20 fast clocks high and 20 low. The data bit is sampled once per period at a chosen cycle; the <code>pdmscan</code> command tries all 40 and the default (14) sits in the clean part.</p>`;
+  },
+  cic() {
+    const pts = range(1, 400000, 1400).map(f => [f, db(cicMag(f))]);
+    const droop = db(cicMag(7000));
+    return plot({ x0: 0, x1: 400000, y0: -120, y1: 5, xt: [0, 96000, 192000, 288000, 384000], xf: kHz, yt: [0, -20, -40, -60, -80, -100, -120], xl: "frequency (Hz) at the 2.4 MHz input rate", yl: "gain (dB)", series: [{ pts }], bands: [[0, 8000], [88000, 104000], [184000, 200000], [280000, 296000]], aria: "CIC magnitude response" }) +
+      `<p class="cap">Shaded: the 0–8 kHz band we keep, and the bands that would fold onto it after ÷25 (around every 96 kHz). The CIC puts deep notches exactly there. Its only flaw, a droop of ${droop.toFixed(2)} dB at 7 kHz, is corrected by the low-pass FIR.</p>`;
+  },
+  hb() {
+    const pts = range(0, 48000, 600).map(f => [f, db(hbMag(f))]);
+    return plot({ x0: 0, x1: 48000, y0: -120, y1: 5, xt: [0, 8000, 16000, 24000, 32000, 40000, 48000], xf: kHz, yt: [0, -20, -40, -60, -80, -100, -120], xl: "frequency (Hz) at 96 kHz", yl: "gain (dB)", series: [{ pts }], bands: [[0, 8000], [40000, 48000]], aria: "Half-band filter response" }) +
+      `<p class="cap">Real response of the 35 coefficients in the FPGA. It passes 0–8 kHz flat and removes 40–48 kHz (shaded right), which would otherwise fold onto 0–8 kHz after ÷2.</p>`;
+  },
+  lp() {
+    const pts = range(0, 24000, 700).map(f => [f, db(lpMag(f))]);
+    const flat = range(20, 7500, 300).map(f => [f, chainDb(f)]);
+    let lo = 0, hi = -99; for (const [f, v] of flat) if (f <= 7000) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    return plot({ x0: 0, x1: 24000, y0: -100, y1: 10, xt: [0, 4000, 8000, 12000, 16000, 20000, 24000], xf: kHz, yt: [0, -20, -40, -60, -80, -100], xl: "frequency (Hz) at 48 kHz", yl: "gain (dB)", series: [{ pts }], marks: [[7000, "7k"], [8000, "8k", 12]], aria: "Low-pass filter response" }) +
+      `<p class="cap">The 135-tap filter alone: it rises slightly toward 7 kHz on purpose (to cancel the CIC droop), then drops by more than 60 dB from 8 kHz, which would alias after ÷3.</p>` +
+      plot({ x0: 0, x1: 7500, y0: -0.5, y1: 0.5, xt: [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000], xf: kHz, yt: [-0.5, -0.25, 0, 0.25, 0.5], xl: "frequency (Hz)", yl: "gain (dB)", series: [{ pts: flat, cls: "s3" }], aria: "Passband flatness of the whole chain", h: 180 }) +
+      `<p class="cap">The whole chain (CIC × half-band × low-pass), zoomed in: flat within ${fmt(hi - lo, 2)} dB from 20 Hz to 7 kHz.</p>`;
+  },
+  dc() {
+    const a = 1 - 2 ** -7;
+    const mag = f => { const w = 2 * Math.PI * f / 16000; const n = Math.hypot(1 - Math.cos(w), Math.sin(w)); const d = Math.hypot(1 - a * Math.cos(w), a * Math.sin(w)); return n / d; };
+    const pts = range(0, 4, 300).map(e => { const f = 10 ** e; return [f, db(mag(f))]; });
+    return plot({ x0: 1, x1: 8000, xlog: true, y0: -40, y1: 3, xt: [1, 10, 100, 1000, 8000], xf: v => v >= 1000 ? kHz(v) : v, yt: [0, -10, -20, -30, -40], xl: "frequency (Hz), log scale", yl: "gain (dB)", series: [{ pts }], marks: [[20, "−3 dB ≈ 20 Hz"]], aria: "DC blocker response" }) +
+      `<p class="cap">One pole at a = 1 − 2⁻⁷: only a shift and two adds, no multiplier.</p>`;
+  },
+  hann() {
+    const pts = range(0, 511, 256).map(n => [n, 0.5 - 0.5 * Math.cos(2 * Math.PI * n / 512)]);
+    return plot({ x0: 0, x1: 511, y0: 0, y1: 1, xt: [0, 128, 256, 384, 511], yt: [0, 0.5, 1], xl: "sample in the frame", yl: "weight", series: [{ pts, cls: "s4" }], aria: "Hann window", h: 170 }) +
+      `<p class="cap">Fading each frame in and out stops the frame edges from smearing energy across the whole spectrum.</p>`;
+  },
+  frames() {
+    const W = 420, H = 150, L = 10, u = 50;
+    let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Overlapping frames">`;
+    for (let i = 0; i <= 7; i++) s += `<line class="gl" x1="${L + i * u}" x2="${L + i * u}" y1="10" y2="118"/><text class="tk" x="${L + i * u}" y="132" text-anchor="middle">${i * 16}</text>`;
+    for (let k = 0; k < 6; k++) {
+      const x = L + k * u, y = 16 + k * 17;
+      s += `<rect x="${x}" y="${y}" width="${2 * u}" height="12" rx="3" fill="var(--k-dsp-bg)" stroke="var(--k-dsp)"/>`;
+      s += `<text class="tk" x="${x + u}" y="${y + 9.5}" text-anchor="middle">frame ${k + 1}</text>`;
+    }
+    return s + `<text class="al" x="${W / 2}" y="147" text-anchor="middle">time (ms): each frame is 32 ms, a new one every 16 ms</text></svg>`;
+  },
+  fft() {
+    const W = 420, H = 230, L = 60, R = 50, T = 14, rowH = 26, cols = 4, cx = i => L + i * (W - L - R) / (cols - 1);
+    let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="8-point FFT butterfly diagram">`;
+    const rev = [0, 4, 2, 6, 1, 5, 3, 7];
+    for (let st = 0; st < 3; st++) {
+      const span = 1 << st;
+      for (let i = 0; i < 8; i++) {
+        const j = i ^ span;
+        s += `<line x1="${cx(st)}" y1="${T + i * rowH}" x2="${cx(st + 1)}" y2="${T + j * rowH}" stroke="${i < j ? "var(--k-dsp)" : "var(--k-mem)"}" stroke-width="1.2" opacity=".8"/>`;
+        s += `<line x1="${cx(st)}" y1="${T + i * rowH}" x2="${cx(st + 1)}" y2="${T + i * rowH}" stroke="var(--line)" stroke-width="1"/>`;
+      }
+      s += `<text class="al" x="${(cx(st) + cx(st + 1)) / 2}" y="${H - 6}" text-anchor="middle">stage ${st + 1}</text>`;
+    }
+    for (let c = 0; c < cols; c++) for (let i = 0; i < 8; i++) s += `<circle cx="${cx(c)}" cy="${T + i * rowH}" r="3.2" fill="var(--panel)" stroke="var(--ink)"/>`;
+    for (let i = 0; i < 8; i++) {
+      s += `<text class="tk" x="${L - 8}" y="${T + i * rowH + 3.5}" text-anchor="end">x[${rev[i]}]</text>`;
+      s += `<text class="tk" x="${cx(3) + 8}" y="${T + i * rowH + 3.5}">X[${i}]</text>`;
+    }
+    return s + "</svg>" + `<p class="cap">The same idea at 8 points: 3 stages of butterflies. Each butterfly takes two values, multiplies one by a twiddle (a point on the unit circle) and outputs their sum and difference. The FPGA does 9 stages × 256 butterflies for 512 points, reading and writing the same RAM (in place), so the samples go in in bit-reversed order.</p>`;
+  },
+  mel() {
+    let s = "", k = 0;
+    const W = 420, H = 200, L = 42, R = 12, T = 12, B = 36, fx = f => L + f / 8000 * (W - L - R), fy = v => T + (1 - v) * (H - T - B);
+    s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Mel filterbank">`;
+    for (const t of [0, 0.5, 1]) s += `<line class="gl" x1="${L}" x2="${W - R}" y1="${fy(t)}" y2="${fy(t)}"/><text class="tk" x="${L - 5}" y="${fy(t) + 3.5}" text-anchor="end">${t}</text>`;
+    for (const f of [0, 2000, 4000, 6000, 8000]) s += `<text class="tk" x="${fx(f)}" y="${H - B + 14}" text-anchor="middle">${kHz(f)}</text>`;
+    for (let m = 0; m < DATA.mel_first.length; m++) {
+      const b0 = DATA.mel_first[m], n = DATA.mel_count[m];
+      const pts = [[b0 - 1, 0]];
+      for (let i = 0; i < n; i++) pts.push([b0 + i, DATA.mel_weight[k + i] / 32768]);
+      pts.push([b0 + n, 0]); k += n;
+      s += `<path class="${m % 2 ? "s1" : "s3"}" style="stroke-width:1.3" d="${pts.map((p, i) => (i ? "L" : "M") + fx(p[0] * 31.25).toFixed(1) + " " + fy(p[1]).toFixed(1)).join("")}"/>`;
+    }
+    s += `<line class="ax" x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}"/><line class="ax" x1="${L}" x2="${L}" y1="${T}" y2="${H - B}"/>`;
+    s += `<text class="al" x="${(L + W) / 2}" y="${H - 4}" text-anchor="middle">frequency (Hz); FFT bins are 31.25 Hz apart</text><text class="al" transform="translate(12 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle">weight</text>`;
+    return s + "</svg>" + `<p class="cap">The 40 real filters from the firmware's table (${DATA.mel_weight.length} non-zero weights). Narrow at low frequencies, wide at high ones, roughly like the ear.</p>`;
+  },
+  hist() {
+    const W = 420, H = 130, L = 10, n = 128, dx = (W - 20) / n;
+    let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Classification windows over time">`;
+    for (let i = 0; i < n; i++) s += `<rect x="${L + i * dx}" y="12" width="${dx - 0.6}" height="28" fill="var(--k-fw)" opacity="${0.25 + 0.5 * ((i * 37) % 11) / 11}"/>`;
+    const win = [[0, 64, 0], [32, 96, 1], [64, 128, 2]];
+    for (const [a, b, r] of win) {
+      const y = 52 + r * 20;
+      s += `<rect x="${L + a * dx}" y="${y}" width="${(b - a) * dx}" height="14" rx="3" fill="var(--k-fw-bg)" stroke="var(--k-fw)"/>`;
+      s += `<text class="tk" x="${L + (a + b) / 2 * dx}" y="${y + 10.5}" text-anchor="middle">decision ${r + 1}: frames ${a + 1}–${b}</text>`;
+    }
+    return s + `<text class="al" x="${L}" y="${H - 2}">128 frames = 2 s. Each decision looks at the last 64 frames; a new one starts every 32.</text></svg>`;
+  },
+  quant() {
+    const step = 10 * Math.log10(2) * 32 / 256;
+    const pts = range(-110, 20, 500).map(d => [d, Math.max(-128, Math.min(127, Math.floor(d / step) + 100))]);
+    return plot({ x0: -110, x1: 20, y0: -128, y1: 127, xt: [-100, -80, -60, -40, -20, 0, 20], yt: [-128, -64, 0, 64, 100, 127], xl: "band level (dB relative to a full-scale sine)", yl: "int8 value", series: [{ pts, cls: "s3" }], marks: [[0, "full scale → 100"]], aria: "Quantization mapping" }) +
+      `<p class="cap">One step = ${step.toFixed(3)} dB. Everything from about −85 dB to +10 dB gets a distinct value; quieter bands sit at −128.</p>`;
+  },
+  cnn() {
+    const L = [
+      ["input", "1 × 40 × 64", 0, 0], ["conv 3×3, stride 2", "16 × 20 × 32", 144, 92160],
+      ["depthwise 3×3", "16 × 20 × 32", 144, 92160], ["pointwise 1×1 + pool", "32 × 10 × 16", 512, 327680],
+      ["depthwise 3×3", "32 × 10 × 16", 288, 46080], ["pointwise 1×1 + pool", "64 × 5 × 8", 2048, 327680],
+      ["depthwise 3×3", "64 × 5 × 8", 576, 23040], ["pointwise 1×1", "64 × 5 × 8", 4096, 163840],
+      ["global average", "64", 0, 0], ["fully connected", "5 scores", 320, 320]];
+    const max = 327680;
+    let s = `<table><tr><th style="width:auto">layer</th><th style="width:auto">output</th><th style="width:auto">weights</th><th style="width:34%">multiply-adds</th></tr>`;
+    for (const [n, sh, w, m] of L) s += `<tr><td>${n}</td><td class="mono" style="white-space:nowrap">${sh}</td><td class="mono">${w ? fmt(w) : "–"}</td><td>${m ? `<div class="bar"><div style="width:${100 * m / max}%"></div></div><span class="mono" style="font-size:11px">${fmt(m)}</span>` : ""}</td></tr>`;
+    return s + `<tr><td><b>total</b></td><td></td><td class="mono"><b>8,128</b></td><td class="mono"><b>1,072,960</b></td></tr></table>`;
+  },
+  confusion() {
+    const names = ["speech", "vehicle", "machinery", "alarm", "background"];
+    const cm = [[882, 0, 0, 0, 0], [0, 521, 180, 21, 31], [2, 119, 571, 9, 16], [0, 11, 10, 588, 18], [80, 534, 485, 610, 5707]];
+    let s = `<table class="conf"><tr><th>true ↓ / said →</th>${names.map(n => `<th>${n.slice(0, 5)}</th>`).join("")}<th>right</th></tr>`;
+    cm.forEach((row, i) => {
+      const tot = sum(row);
+      s += `<tr><th style="text-align:left!important">${names[i]}</th>` + row.map((v, j) => {
+        const f = v / tot;
+        const bg = i === j ? `color-mix(in srgb, var(--k-fw) ${Math.round(f * 55)}%, transparent)` : `color-mix(in srgb, var(--k-out) ${Math.round(Math.min(f * 3, 1) * 45)}%, transparent)`;
+        return `<td style="background:${bg}">${v}</td>`;
+      }).join("") + `<td><b>${Math.round(100 * row[i] / tot)}%</b></td></tr>`;
+    });
+    return s + `</table><p class="cap">10,395 one-second test windows the network never trained on, run through the exact integer model the board uses. Balanced accuracy 83.9%. Vehicle and machinery are the usual mix-up: both are steady mechanical drones.</p>`;
+  },
+  packet() {
+    const bytes = [["A5", "sync", "k-io"], ["5A", "sync", "k-io"], ["02", "type", "k-plat"], ["seq", "", "k-plat"], ["class", "", "k-fw"], ["sure", "", "k-fw"], ["margin", "int16", "k-fw", 2], ["5 scores", "5 × int16", "k-dsp", 10], ["sum", "check", "k-mem"]];
+    const W = 420, H = 76, u = 400 / 19;
+    let x = 10, s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Result packet byte layout">`;
+    for (const [a, b, k, n = 1] of bytes) {
+      s += `<rect x="${x}" y="10" width="${u * n - 2}" height="34" rx="3" fill="var(--${k}-bg)" stroke="var(--${k})"/><text class="tk" x="${x + (u * n - 2) / 2}" y="31" text-anchor="middle" style="fill:var(--ink)">${n > 1 || a.length <= 3 ? a : a.slice(0, 3)}</text>`;
+      if (b) s += `<text class="tk" x="${x + (u * n - 2) / 2}" y="58" text-anchor="middle">${b}</text>`;
+      x += u * n;
+    }
+    return s + `</svg><p class="cap">19 bytes per decision. "sure" is 0 when the result is "unknown"; the checksum is the sum of the bytes after the sync pair.</p>`;
+  },
+  budget() {
+    const parts = [["FFT (hardware, in parallel)", 32 * 0.13, "var(--k-dsp)"], ["features: power, mel, log", 32 * 0.75, "var(--k-fw)"], ["neural network", 210, "var(--k-out)"], ["free", 512 - 210 - 24, "var(--grid)"]];
+    let s = `<div style="display:flex;height:16px;border-radius:6px;overflow:hidden;margin:6px 0">`;
+    for (const [, v, c] of parts.slice(1)) s += `<div style="width:${100 * v / 512}%;background:${c}"></div>`;
+    s += `</div><table>`;
+    for (const [n, v] of parts) s += `<tr><th>${n}</th><td class="mono">${fmt(v, v < 10 ? 1 : 0)} ms</td></tr>`;
+    return s + `</table><p class="cap">Time per decision cycle of 512 ms (32 frames). The FFT runs in its own logic, so it costs the processor nothing.</p>`;
+  },
+  util() {
+    const u = [["LUTs (logic)", 4093, 20800], ["flip-flops", 3528, 41600], ["block RAMs", 39, 50], ["DSP slices", 12, 90], ["I/O pins", 13, 106]];
+    return `<table>` + u.map(([n, a, b]) => `<tr><th style="width:30%">${n}</th><td style="width:40%"><div class="bar"><div style="width:${100 * a / b}%"></div></div></td><td class="mono" style="white-space:nowrap">${fmt(a)} / ${fmt(b)}</td></tr>`).join("") + `</table>`;
+  },
 };
 
-const PARENT = { fpga: "system", host: "system", hydro: "system", frontend: "fpga", features: "fpga", cpu: "fpga", firmware: "cpu" };
-const KINDS = [["hw", "Physical hardware"], ["hdl", "Custom HDL"], ["ip", "AMD IP core"], ["cpu", "Soft processor"], ["sw", "Firmware"], ["pc", "PC software"]];
+// ------------------------------------------------------------------ map layout
+const LANES = [
+  { y: 40, h: 210, label: "① Audio front-end · FPGA logic, 96 MHz: pulses in, 16 kHz samples out" },
+  { y: 268, h: 182, label: "② Spectrum engine · FPGA logic: a 512-point spectrum every 16 ms" },
+  { y: 468, h: 176, lx: 96, label: "③ Features and classifier · firmware on the MicroBlaze V" },
+  { y: 662, h: 250, label: "④ Platform · clock, processor, memory, register bus, I/O" },
+];
+// id, kind, x, y, w, h, title, sub, rate
+const B = [
+  ["mic", "io", 28, 95, 112, 78, "Microphone", "PDM MEMS", "pins JA2–JA4"],
+  ["pdm", "dsp", 157, 95, 112, 78, "PDM interface", "clock + capture", "2.4 Mbit/s"],
+  ["cic", "dsp", 286, 95, 112, 78, "CIC filter", "5th order, ÷25", "→ 96 kHz"],
+  ["hb", "dsp", 415, 95, 112, 78, "Half-band FIR", "35 taps, ÷2", "→ 48 kHz"],
+  ["lp", "dsp", 544, 95, 112, 78, "Low-pass FIR", "135 taps, ÷3", "→ 16 kHz"],
+  ["src", "dsp", 673, 95, 112, 78, "Source", "mic or tone", "24-bit"],
+  ["tone", "mem", 673, 196, 112, 40, "Test tone", "sine ROM", ""],
+  ["dc", "dsp", 802, 95, 112, 78, "DC blocker", "20 Hz high-pass", "24-bit"],
+  ["gain", "dsp", 931, 95, 112, 78, "Gain", "×2^g, saturate", "→ 16-bit"],
+  ["level", "dsp", 1060, 95, 112, 36, "Level meter", "", ""],
+  ["fifo", "mem", 1060, 141, 112, 36, "Capture FIFO", "", ""],
+  ["framer", "mem", 931, 305, 112, 78, "Framer", "512 samples", "every 16 ms"],
+  ["hann", "dsp", 752, 305, 112, 78, "Hann window", "18-bit ROM", "× w[n]"],
+  ["fft", "dsp", 420, 305, 265, 78, "FFT", "512-point, radix-2, in place", "9 stages × 256 butterflies"],
+  ["fftram", "mem", 420, 398, 125, 36, "FFT RAM", "", ""],
+  ["twiddle", "mem", 560, 398, 125, 36, "Twiddle ROM", "", ""],
+  ["bins", "dsp", 180, 305, 172, 78, "Spectrum bins", "257 complex bins", "read by the CPU"],
+  ["power", "fw", 28, 505, 100, 78, "Power", "re² + im²", "257 values"],
+  ["mel", "fw", 146, 505, 120, 78, "Mel filterbank", "40 bands", "50 Hz – 7 kHz"],
+  ["log", "fw", 284, 505, 90, 78, "log₂", "integer", "Q8"],
+  ["hist", "fw", 392, 505, 110, 78, "History", "64 frames", "≈ 1 second"],
+  ["quant", "fw", 520, 505, 110, 78, "Quantize", "int8 image", "40 × 64"],
+  ["cnn", "fw", 648, 505, 170, 78, "Neural network", "DS-CNN, 7 layers", "8,128 int8 weights"],
+  ["decide", "fw", 836, 505, 130, 78, "Decision", "best of 5", "or “unknown”"],
+  ["led", "out", 1060, 488, 112, 52, "RGB LED", "colour = class", ""],
+  ["packets", "out", 1060, 560, 112, 52, "Result packets", "2 per second", ""],
+  ["osc", "io", 28, 715, 112, 66, "Oscillator", "12 MHz", ""],
+  ["mmcm", "plat", 160, 715, 112, 66, "Clocking", "MMCM → 96 MHz", ""],
+  ["reset", "plat", 292, 715, 112, 66, "Reset", "until clock locks", ""],
+  ["cpu", "plat", 424, 715, 170, 66, "MicroBlaze V", "RISC-V RV32IMC · 96 MHz", ""],
+  ["lmb", "mem", 614, 715, 112, 66, "Memory", "128 KB block RAM", ""],
+  ["axi", "plat", 746, 715, 134, 66, "Register bus", "AXI4-Lite", ""],
+  ["uart", "plat", 900, 715, 130, 66, "UART", "115,200 baud", ""],
+  ["usb", "io", 1060, 715, 112, 66, "USB bridge", "FT2232H", ""],
+  ["flash", "io", 28, 820, 112, 66, "Flash", "4 MB quad-SPI", ""],
+  ["jtag", "io", 160, 820, 112, 66, "JTAG / debug", "Vivado, xsdb", ""],
+  ["shell", "fw", 424, 820, 112, 66, "Command shell", "text commands", ""],
+  ["btnled", "plat", 556, 820, 112, 66, "Buttons, LEDs", "2 + 2 + RGB", ""],
+  ["xadc", "plat", 688, 820, 112, 66, "XADC", "temp, voltages", ""],
+  ["pc", "out", 1060, 820, 112, 66, "PC app", "Live Classifier", ""],
+];
+// points, type ("data" | "ctrl"), optional label [x, y, text, anchor]
+const E = [
+  [[[140, 134], [157, 134]]], [[[269, 134], [286, 134]]], [[[398, 134], [415, 134]]], [[[527, 134], [544, 134]]],
+  [[[656, 134], [673, 134]]], [[[729, 196], [729, 173]]], [[[785, 134], [802, 134]]], [[[914, 134], [931, 134]]],
+  [[[1043, 113], [1060, 113]]], [[[1043, 159], [1060, 159]]],
+  [[[987, 173], [987, 305]], "data", [997, 232, "16 kHz, 16-bit samples", "start"]],
+  [[[931, 344], [864, 344]]], [[[752, 344], [685, 344]]], [[[420, 344], [352, 344]]],
+  [[[482, 398], [482, 383]], "ctrl"], [[[622, 398], [622, 383]], "ctrl"],
+  [[[180, 344], [78, 344], [78, 505]], "data", [88, 440, "a spectrum every 16 ms", "start"]],
+  [[[128, 544], [146, 544]]], [[[266, 544], [284, 544]]], [[[374, 544], [392, 544]]],
+  [[[502, 544], [520, 544]], "data", [511, 604, "every 0.5 s", "middle"]],
+  [[[630, 544], [648, 544]]], [[[818, 544], [836, 544]]],
+  [[[966, 530], [1010, 530], [1010, 514], [1060, 514]]], [[[966, 558], [1010, 558], [1010, 586], [1060, 586]]],
+  [[[1116, 612], [1116, 690], [965, 690], [965, 715]], "data", [1040, 684, "binary packets", "middle"]],
+  [[[140, 748], [160, 748]], "ctrl"], [[[272, 748], [292, 748]], "ctrl"], [[[404, 748], [424, 748]], "ctrl"],
+  [[[594, 748], [614, 748]], "ctrl"], [[[509, 715], [509, 700], [813, 700], [813, 715]], "ctrl"],
+  [[[880, 748], [900, 748]]], [[[1030, 748], [1060, 748]]], [[[1116, 781], [1116, 820]]],
+  [[[813, 781], [813, 800], [612, 800], [612, 820]], "ctrl"], [[[744, 800], [744, 820]], "ctrl"],
+  [[[480, 781], [480, 820]], "ctrl"], [[[160, 853], [140, 853]], "ctrl"], [[[216, 820], [216, 806], [452, 806], [452, 781]], "ctrl"],
+];
+const EDGE_OF = {}; // edge index -> [from, to] for highlighting
+function blockAt(x, y) { for (const b of B) if (x >= b[2] - 1 && x <= b[2] + b[4] + 1 && y >= b[3] - 1 && y <= b[3] + b[5] + 1) return b[0]; return null; }
+
+// ------------------------------------------------------------------ panel content per block
+const KIND = { io: "external part", dsp: "FPGA logic", mem: "FPGA memory", fw: "firmware", plat: "platform", out: "output" };
+const kv = rows => "<table>" + rows.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join("") + "</table>";
+const srcf = s => `<p class="src">Source: ${s}</p>`;
+const I = {
+  mic: () => `<p>An Adafruit 3492 breakout with a MEMS microphone that has a <b>PDM</b> (pulse-density modulation) output. The FPGA gives it a clock; on every clock the mic answers with one bit. The fraction of 1s follows the sound pressure: 50% 1s is silence, more 1s is pressure above average, fewer is below.</p>${charts.pdm()}
+    ${kv([["clock from the FPGA", "2.4 MHz"], ["data", "1 bit per clock (2.4 Mbit/s)"], ["wiring (Pmod JA)", "DAT → JA2 (G19), CLK → JA3 (N18), SEL → JA4 (L18), 3V, GND"], ["SEL pin", "driven by the FPGA (register AUD_CTRL bit 1)"], ["health check", "counts 1s in every 65,536 bits: 32,768 = silence"]])}`,
+  pdm: () => `<p>Makes the microphone clock and reads its data pin. The 96 MHz system clock is divided by 40, giving a 2.4 MHz clock that is high for 20 cycles and low for 20. The data pin passes through two flip-flops (so it can't upset the logic when it changes at an awkward moment) and is sampled once per period at a programmable cycle.</p>${charts.phase()}
+    ${kv([["output", "one bit per 40 system clocks"], ["capture point", "cycle 0–39, default 14 (AUD_CTRL bits 13:8)"], ["also", "a 1s counter for the health check (PDM_ONES register)"]])}${srcf("<code>hw/audio_id/src/audio_frontend.v</code>, module <code>pdm_if</code>")}`,
+  cic: () => `<p>The first and fastest filter: a 5th-order <b>cascaded integrator–comb</b> (CIC). It keeps five running sums of the ±1 bits at 2.4 MHz, then every 25th sum goes through five differences (the combs). The result is a 96 kHz stream of 24-bit numbers. It needs no multipliers at all, only adders, which is why it can run at the full bit rate.</p>${charts.cic()}
+    ${kv([["decimation", "÷25: 2.4 MHz → 96 kHz"], ["order", "5 integrators + 5 combs"], ["registers", "26-bit (gain 25⁵ = 9,765,625 fits); overflow wraps harmlessly"], ["output", "24-bit signed"], ["hardware trick", "the 5 combs share one adder, one stage per clock"]])}${srcf("<code>audio_frontend.v</code>, module <code>cic5</code>; designed in <code>model/frontend.py</code>")}`,
+  hb: () => `<p>A <b>half-band FIR</b> filter that halves the rate from 96 to 48 kHz. Each output is a weighted sum of the last 35 inputs; the weights (coefficients) sit in a small ROM. Half of the weights are exactly zero, a property of half-band filters.</p>${charts.hb()}
+    ${kv([["taps", "35 (Kaiser window, β = 9)"], ["decimation", "÷2: 96 → 48 kHz"], ["coefficients", "18-bit, Q1.17, in a ROM"], ["arithmetic", "24-bit data × 18-bit weights, 48-bit sum, rounded and saturated back to 24-bit"], ["hardware", "one multiplier, reused for all 35 products (2,000 clocks available per output)"]])}${srcf("<code>audio_frontend.v</code>, module <code>fir_decim</code>; coefficients <code>hb_coef_rom.v</code>")}`,
+  lp: () => `<p>The main anti-alias filter: a 135-tap <b>equiripple</b> (Parks–McClellan) low-pass that divides the rate by 3, from 48 to the final 16 kHz. It does three jobs at once: cut everything above 8 kHz, undo the CIC's droop, and set the overall gain so a full-scale mic signal becomes a full-scale 24-bit number.</p>${charts.lp()}
+    ${kv([["taps", "135"], ["decimation", "÷3: 48 → 16 kHz"], ["passband", "0–7 kHz, shaped as 1 / CIC droop in 14 steps of 500 Hz"], ["stopband", "from 8 kHz, about −65 dB"], ["hardware", "same design as the half-band: one reused multiplier"], ["checked", "bit-exact against the Python model in simulation"]])}${srcf("<code>audio_frontend.v</code>, module <code>fir_decim</code>; coefficients <code>lp_coef_rom.v</code>")}`,
+  tone: () => `<p>A built-in test signal: a 1,024-entry sine table and a 32-bit phase counter that steps once per 16 kHz sample. Switching the source to the tone sends a perfectly known signal through everything downstream, so the spectrum, mel bands and levels can be checked without any sound.</p>
+    ${kv([["frequency", "TONE_INC × 16,000 / 2³² Hz (default 1 kHz)"], ["level", "−6 dBFS (24-bit)"], ["self-test", "the mel test expects band 13 at −6.0 dB; it passes exactly"]])}${srcf("<code>audio_frontend.v</code>; table <code>tone_rom.v</code>")}`,
+  src: () => `<p>A switch between the microphone path and the test tone (register AUD_CTRL bit 2). Everything after this point can't tell the difference, which is what makes the tone useful for testing.</p>`,
+  dc: () => `<p>MEMS mics add a constant offset (DC) to the signal. A one-pole <b>high-pass filter</b> removes it: y = x − x<sub>prev</sub> + a·y<sub>prev</sub>, with a = 1 − 2⁻⁷. Multiplying by a is just a subtraction of a shifted copy, so no multiplier is needed.</p>${charts.dc()}
+    ${kv([["corner", "≈ 20 Hz"], ["precision", "44-bit accumulator with 8 extra fraction bits, saturated to 24-bit"]])}`,
+  gain: () => `<p>Scales the 24-bit signal to the 16-bit samples used from here on: out = saturate<sub>16</sub>((x · 2<sup>g</sup>) / 256). Each step of g is +6 dB. Samples that would overflow are clamped and counted.</p>
+    ${kv([["g = 0", "24-bit full scale → 16-bit full scale"], ["g = 3 (default)", "×8 (+18 dB): the mic signal is quiet"], ["range", "g = 0 … 8 (AUD_CTRL bits 19:16)"], ["clip counter", "LVL_CLIPS register"]])}`,
+  level: () => `<p>Measures loudness over blocks of 1,024 samples (64 ms): the peak and the mean square. The firmware's <code>audio</code> and <code>status</code> commands turn these into dBFS.</p>
+    ${kv([["peak", "max |sample| (LVL_PEAK)"], ["mean square", "LVL_MEANSQ; a full-scale sine reads 2²⁹"], ["tone check", "the 1 kHz tone reads −6.0 dBFS"]])}`,
+  fifo: () => `<p>A 1,024-sample queue for <b>recordings</b>. The <code>rec</code> command lets the processor copy up to 30,000 samples (1.875 s) into memory; <code>dump</code> then sends them to the PC, which saves a WAV file. Live audio can't go straight to the PC: 16,000 samples × 16 bits is 256 kbit/s, more than the 115.2 kbit/s serial link.</p>
+    ${kv([["size", "1,024 × 16-bit (64 ms)"], ["reading", "AUD_FIFO register, one sample per read"], ["overflow flag", "AUD_STAT bit 16"]])}${srcf("<code>host/fpga_audio.py record</code> on the PC side")}`,
+  framer: () => `<p>Keeps the last 512 samples in a circular buffer (one block RAM). Every 256 new samples, 16 ms, it starts a new frame, so consecutive frames overlap by half. 512 samples at 16 kHz is 32 ms of sound.</p>${charts.frames()}
+    ${kv([["frame", "512 samples = 32 ms"], ["hop", "256 samples = 16 ms (62.5 frames per second)"], ["skipped frames", "counted in SPEC_DROPPED; 0 in practice, the FFT needs only ~1% of the time"]])}${srcf("<code>hw/audio_id/src/spectrum_engine.v</code>")}`,
+  hann: () => `<p>Each frame is multiplied by a <b>Hann window</b> stored as 512 18-bit values in a ROM. The products are written straight into the FFT memory, at bit-reversed addresses so the FFT can work in place.</p>${charts.hann()}
+    ${kv([["window", "w[n] = ½ − ½ cos(2πn / 512)"], ["format", "Q1.17 (18-bit), table <code>hann_rom.v</code>"], ["product", "(x × w) ÷ 512 → 25-bit"]])}`,
+  fft: () => `<p>A custom <b>fast Fourier transform</b> engine: it turns 512 time samples into 512 frequency values (only 257 are unique for a real signal). It is radix-2 decimation-in-time and works in place: 9 stages, each of 256 butterflies, all reading and writing the same RAM.</p>${charts.fft()}
+    ${kv([["speed", "one butterfly every 5 clocks; ~12,000 clocks (0.13 ms) per frame, out of 1.5 million available"], ["data", "25-bit complex"], ["twiddles", "18-bit Q1.17"], ["scaling", "÷2 after every stage, so it can never overflow"], ["checked", "bit-exact against <code>model/spectrum.py</code> in simulation"]])}${srcf("<code>spectrum_engine.v</code>")}`,
+  fftram: () => `<p>The FFT's working memory: 512 complex values stored as two 512 × 25-bit true-dual-port block RAMs, one for real parts and one for imaginary parts. Each butterfly reads two values and writes two back.</p>
+    ${kv([["why two RAMs", "Vivado would not map one 50-bit dual-port RAM onto block RAM"]])}`,
+  twiddle: () => `<p>A ROM of 256 "twiddle factors": points on the unit circle, W<sup>k</sup> = e<sup>−j2πk/512</sup>. Each butterfly multiplies one input by one of them.</p>${kv([["format", "18-bit Q1.17, table <code>twiddle_rom.v</code>"]])}`,
+  bins: () => `<p>When a frame is done, the 257 bins (DC to 8 kHz, 31.25 Hz apart) can be read by the processor through a 4 KB window of the register bus. A frame counter tells the firmware a new spectrum is ready; a busy flag lets it detect a read that was overwritten halfway (it then discards it).</p>
+    ${kv([["address", "0x4000_1000 – 0x4000_1FFF (real, imaginary per bin)"], ["resolution", "31.25 Hz per bin"], ["registers", "SPEC_FRAMES, SPEC_STAT (busy), SPEC_DROPPED"]])}`,
+  power: () => `<p>From here the work is done in C on the processor. For every bin, power = (re² + im²) ÷ 256, in 64-bit integers. The whole feature step (power, mel, log) takes about 0.75 ms and runs once per 16 ms frame.</p>${srcf("<code>fw/src/features.c</code>")}`,
+  mel: () => `<p>Groups the 257 power values into 40 <b>mel bands</b>: overlapping triangular filters, spaced like human pitch perception between 50 Hz and 7 kHz. Each band is a weighted sum of a few bins.</p>${charts.mel()}
+    ${kv([["bands", "40, from 50 Hz to 7 kHz"], ["weights", "15-bit (Q15), sparse table in <code>fw/src/mel_table.h</code>"]])}`,
+  log: () => `<p>Takes log₂ of each band so that the numbers follow loudness rather than raw power. It is computed exactly in integers by repeated squaring, so the PC model and the board produce identical values.</p>
+    ${kv([["format", "Q8: 1/256 of a doubling of power (0.0118 dB per step)"], ["reference", "12,505 = a full-scale sine in its strongest band"], ["mel stream", "<code>stream mel</code> sends these as bytes in 0.5 dB steps (live spectrogram on the PC)"]])}`,
+  hist: () => `<p>A ring buffer holding the last 64 frames of 40 bands: about one second of "mel spectrogram". Every 32 new frames (0.512 s) the classifier runs on the latest 64, so each moment of sound is seen twice.</p>${charts.hist()}
+    ${kv([["size", "64 × 40 × 16-bit = 5 KB"], ["no gaps", "the network keeps collecting frames while it runs, so each window is 64 consecutive frames (firmware 0.4.1)"]])}`,
+  quant: () => `<p>Turns the 40 × 64 window into an 8-bit image for the network: q = clamp(((L − 12,505) >> 5) + 100, −128, 127). A full-scale tone maps to 100, leaving headroom for louder sounds.</p>${charts.quant()}`,
+  cnn: () => `<p>A small <b>depthwise-separable convolutional network</b> (DS-CNN) that reads the 40 × 64 image and scores the 5 classes. It runs entirely in integer C on the processor: 8-bit weights, 8-bit activations and 32-bit sums, with a per-channel scale after each layer.</p>${charts.cnn()}
+    ${kv([["time", "210 ms per decision (about 19 clocks per multiply-add)"], ["training", "PyTorch, on ESC-50 + LibriSpeech clips whose features were computed exactly as on the board, then quantization-aware fine-tuning"], ["checked", "40 test windows uploaded to the board give bit-identical scores to the PC model"]])}${srcf("<code>fw/src/classifier.c</code>, weights <code>fw/src/model_weights.h</code>, training <code>model/train.py</code> and <code>model/qat.py</code>")}`,
+  decide: () => `<p>The network outputs 5 scores. The highest wins, but only if it beats the runner-up by at least 1.5 (in logit units); otherwise the answer is "unknown". The classes were built from public datasets:</p>
+    <ul><li><b style="color:var(--c-speech)">speech</b>: LibriSpeech readings</li><li><b style="color:var(--c-vehicle)">vehicle</b>: engines, airplanes, helicopters, trains</li><li><b style="color:var(--c-machinery)">machinery</b>: chainsaws, hand saws, vacuum cleaners, washing machines</li><li><b style="color:var(--c-alarm)">alarm</b>: sirens, clock alarms, car horns, church bells</li><li><b style="color:var(--c-background)">background</b>: the other 38 ESC-50 sound types (rain, dogs, footsteps, …)</li></ul>
+    <h3>How well it does</h3>${charts.confusion()}`,
+  led: () => `<p>The RGB LED shows the latest decision, set by the firmware through the LED register (with PWM brightness).</p>
+    ${kv([["speech", `<b style="color:var(--c-speech)">green</b>`], ["vehicle", `<b style="color:var(--c-vehicle)">blue</b>`], ["machinery", `<b style="color:var(--c-machinery)">magenta</b>`], ["alarm", `<b style="color:var(--c-alarm)">red</b>`], ["background", "off"], ["unknown", "dim white"]])}`,
+  packets: () => `<p>With <code>stream class</code> on, every decision is sent to the PC as a small binary packet in the serial stream.</p>${charts.packet()}`,
+  osc: () => `<p>The Cmod A7's 12 MHz crystal oscillator (pin L17): the only clock that comes into the chip.</p>`,
+  mmcm: () => `<p>A clock manager (MMCM, from the Clocking Wizard) multiplies the 12 MHz input up to <b>96 MHz</b>. The whole design, processor and signal processing alike, runs on this single clock, so no data ever has to cross between clock domains. The 2.4 MHz mic clock is made by counting, not by a second clock.</p>`,
+  reset: () => `<p>Holds the processor and the bus in reset until the clock manager reports a stable clock ("locked"), then releases them in the right order.</p>`,
+  cpu: () => `<p><b>MicroBlaze V</b> is AMD's RISC-V soft processor, built from the FPGA's own logic. This one is configured as RV32IMC: 32-bit integer, hardware multiply/divide, compressed instructions, plus a barrel shifter and cycle counters. It has no interrupts: the firmware is one loop that polls everything.</p>
+    <h3>The firmware's main loop</h3><p class="mono" style="font-size:12px;line-height:1.6;background:var(--grid);padding:8px 10px;border-radius:8px">forever:<br>&nbsp; blink LD1 every 0.5 s (alive)<br>&nbsp; if a new spectrum is ready: power → mel → log → history<br>&nbsp; if 32 new frames: run the network, set the LED, send a packet<br>&nbsp; if a character arrived: handle the command line</p>
+    <h3>Where the time goes</h3>${charts.budget()}${srcf("<code>hw/audio_id/bd/cpu_bd.tcl</code>, <code>fw/src/main.c</code>")}`,
+  lmb: () => `<p>128 KB of on-chip block RAM on the processor's local memory bus (LMB), used for both code and data. It takes 32 of the chip's 50 block RAMs. The firmware is baked into the bitstream, so the processor starts running as soon as the FPGA is configured.</p>
+    ${kv([["used", "124.8 KB of 128 KB"], ["recording buffer", "60 KB (30,000 samples)"], ["network activations", "2 × 10 KB"], ["feature history", "5 KB"], ["rest", "code, weights (8 KB + scales), tables, stack"]])}`,
+  axi: () => `<p>The processor talks to all the custom logic through an AXI4-Lite bus at address 0x4000_0000. On the other side is one hand-written Verilog module holding every register.</p>
+    <table><tr><th>address</th><td>registers</td></tr><tr><th>0x00–0x18</th><td>ID, git hash, build time, uptime (96 MHz counter)</td></tr><tr><th>0x20–0x24</th><td>LEDs, buttons</td></tr><tr><th>0x30–0x38</th><td>XADC temperature and voltages</td></tr><tr><th>0x40–0x50</th><td>UART data, status, divider, drops</td></tr><tr><th>0x60–0x84</th><td>audio: control, tone, FIFO, levels, counters</td></tr><tr><th>0x88–0x94</th><td>spectrum: enable, frame count, busy, dropped</td></tr><tr><th>0x1000–0x1FFF</th><td>the 257 FFT bins</td></tr></table>${srcf("<code>hw/audio_id/src/periph_axil.v</code> (map in its header and <code>fw/src/hw.h</code>)")}`,
+  uart: () => `<p>A custom serial port: 8 data bits, no parity, 1 stop bit, always at 115,200 baud. A 4 KB transmit queue lets the firmware write bursts without waiting.</p>
+    ${kv([["capacity", "~11.5 KB/s"], ["decisions", "38 bytes/s"], ["mel stream", "62.5 × 45 bytes = 2.8 KB/s"], ["queues", "4 KB transmit, 64 B receive, with drop/overflow counters"]])}${srcf("<code>hw/audio_id/src/uart_core.v</code>")}`,
+  usb: () => `<p>The Cmod A7's FTDI FT2232H chip: one USB cable gives power, a JTAG port (channel A, for Vivado) and a serial port (channel B, the COM port the PC app opens).</p>`,
+  pc: () => `<p><b>Live Classifier</b> (<code>host/radar.py</code>, or double-click <code>Live Classifier.bat</code>): press Connect and it shows the five class probabilities as a radar chart with a 60-second history. Keys 1–5 mark what is playing, and every result is logged to a CSV file for scoring.</p><img class="shot" src="radar.png" alt="Live Classifier window: radar chart showing machinery at 90%"><p>Other PC tools: <code>fpga_audio.py</code> (status, recordings to WAV), <code>melstream.py</code> (live spectrogram), <code>classify.py</code> (bit-exact check, text view).</p>`,
+  flash: () => `<p>A 4 MB quad-SPI flash chip (Macronix MX25L3233F) holds the whole design, logic and firmware together (a 1.17 MB image). At power-up the FPGA loads itself from it over a 4-bit bus at 33 MHz in about 0.1 s, then the processor starts. No PC is needed to start it.</p>${srcf("written by <code>hw/audio_id/scripts/flash.ps1</code>")}`,
+  jtag: () => `<p>The development path: Vivado programs the FPGA (or the flash) through JTAG, and a debug module inside the MicroBlaze V lets <code>xsdb</code> load new firmware into the running processor without rebuilding the hardware.</p>`,
+  shell: () => `<p>Part of the firmware: a text command line on the serial port. Replies are <code>key=value</code> lines ending in <code>OK</code> or <code>ERR</code>.</p>
+    <p class="mono" style="font-size:12px">status · version · audio · set · rec · dump · pdmscan · mel · stream mel|class|off · class · classify on|off · infer · rgb · rd · wr · help</p>`,
+  btnled: () => `<p>Two push buttons (BTN1 prints the status), two green LEDs (LD1 blinks as a heartbeat) and the RGB LED with 8-bit PWM brightness.</p>`,
+  xadc: () => `<p>The FPGA's built-in ADC watches the chip: die temperature (around 45 °C here) and the core and auxiliary supply voltages (≈ 1.00 V and 1.80 V), shown by <code>status</code>.</p>`,
+};
+const NAMES = Object.fromEntries(B.map(b => [b[0], b[6]]));
+const ORDER = ["mic", "pdm", "cic", "hb", "lp", "tone", "src", "dc", "gain", "level", "fifo", "framer", "hann", "fft", "fftram", "twiddle", "bins",
+  "power", "mel", "log", "hist", "quant", "cnn", "decide", "led", "packets", "uart", "usb", "pc",
+  "osc", "mmcm", "reset", "cpu", "lmb", "axi", "shell", "btnled", "xadc", "flash", "jtag"];
+
+function overview() {
+  return `<h2>How it works</h2>
+  <ol style="padding-left:20px;margin:10px 0">
+    <li><b>Pulses to samples.</b> The mic sends 2.4 million 1-bit pulses per second. Three filters in the FPGA logic (CIC, half-band, low-pass) average and slow them down to 16,000 clean 16-bit samples per second.</li>
+    <li><b>Samples to spectrum.</b> Every 16 ms the spectrum engine windows the last 32 ms of sound and runs a 512-point FFT: how much energy there is at each frequency.</li>
+    <li><b>Spectrum to features.</b> The processor squeezes each spectrum into 40 mel bands on a log scale and keeps the last second of them.</li>
+    <li><b>Features to a category.</b> Twice a second a small neural network scores speech, vehicle, machinery, alarm and background. The LED shows the winner and the result goes to the PC.</li>
+  </ol>
+  <h3>Chip resources used</h3>${charts.util()}
+  <h3>Checked, not assumed</h3>
+  <ul><li>Every FPGA block is bit-exact with a Python model, in simulation and on the board.</li><li>A 1 kHz test tone reads −6.0 dBFS and lands in the right mel band.</li><li>The board's network gives identical scores to the PC's on 40 test windows.</li></ul>
+  <p class="cap">Next: fine-tune on recordings from this microphone (speech is recognised less often than on the test set), and later a hydrophone through a 24-bit I²S ADC using the same pipeline.</p>
+  <div class="navrow"><button class="btn primary" onclick="select('mic')">Start at the microphone ▶</button></div>`;
+}
+
+// ------------------------------------------------------------------ rendering
+const svg = document.getElementById("map"), panel = document.getElementById("panel");
 const NS = "http://www.w3.org/2000/svg";
-const svg = document.getElementById("diagram");
-const panel = document.getElementById("panel");
-let current = "system", selected = null;
-
-function el(tag, attrs, parent) {
-  const e = document.createElementNS(NS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]);
-  if (parent) parent.appendChild(e);
-  return e;
-}
-function anchor(n, side, dx = 0, dy = 0) {
-  switch (side) {
-    case "l": return [n.x, n.y + n.h / 2 + dy];
-    case "r": return [n.x + n.w, n.y + n.h / 2 + dy];
-    case "t": return [n.x + n.w / 2 + dx, n.y];
-    default:  return [n.x + n.w / 2 + dx, n.y + n.h];
-  }
-}
-function wrap(text, max) {
-  const words = text.split(" "), lines = []; let cur = "";
-  for (const w of words) { if ((cur + " " + w).trim().length > max && cur) { lines.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }
-  if (cur) lines.push(cur);
-  return lines;
-}
-
-function render(viewId) {
-  const v = VIEWS[viewId];
-  current = viewId;
-  svg.innerHTML = "";
-  svg.setAttribute("viewBox", `0 0 1000 ${v.h}`);
+let current = null;
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function draw() {
   const defs = el("defs", {}, svg);
-  const m = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
-  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--line)" }, m);
-
-  for (const g of v.groups || []) {
-    const gg = el("g", { class: "group" }, svg);
-    el("rect", { x: g.x, y: g.y, width: g.w, height: g.h }, gg);
-    el("text", { x: g.x + 12, y: g.y + 18 }, gg).textContent = g.label;
+  const mk = el("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0 1 L10 5 L0 9 z", style: "fill: var(--line)" }, mk);
+  for (const l of LANES) {
+    const g = el("g", { class: "lane" }, svg);
+    el("rect", { x: 12, y: l.y, width: 1176, height: l.h, rx: 12 }, g);
+    el("text", { x: l.lx || 26, y: l.y + 22 }, g).textContent = l.label;
   }
-  const byId = Object.fromEntries(v.nodes.map(n => [n.id, n]));
-  for (const e of v.edges || []) {
-    // dx/dy offset the source anchor, tdx/tdy the target anchor; fromPoint/toPoint give raw coordinates
-    const [x1, y1] = e.fromPoint || anchor(byId[e.from], e.fromSide, e.dx, e.dy);
-    const [x2, y2] = e.toPoint || anchor(byId[e.to], e.toSide, e.tdx, e.tdy);
-    let pts = [[x1, y1]];
-    if (e.via) pts = pts.concat(e.via);
-    else if (x1 !== x2 && y1 !== y2) {
-      if ((e.fromSide === "r" || e.fromSide === "l") && (e.toSide === "r" || e.toSide === "l")) { const mx = (x1 + x2) / 2; pts.push([mx, y1], [mx, y2]); }
-      else if (e.fromSide === "b" || e.fromSide === "t") pts.push([x1, y2]);
-      else pts.push([x2, y1]);
-    }
-    pts.push([x2, y2]);
-    const ge = el("g", { class: "edge" + (e.bus ? " bus" : "") + (e.future ? " future" : "") }, svg);
-    el("path", { d: "M" + pts.map(p => p.join(",")).join(" L"), "marker-end": e.bus ? "" : "url(#arr)" }, ge);
-    if (e.label) {
-      const i = Math.floor((pts.length - 1) / 2), p = pts[i], q = pts[i + 1];
-      const vertical = p[0] === q[0];
-      el("text", { x: (p[0] + q[0]) / 2 + (vertical ? 6 : 0), y: (p[1] + q[1]) / 2 + (vertical ? 4 : e.labelBelow ? 15 : -6),
-        "text-anchor": vertical ? "start" : "middle" }, ge).textContent = e.label;
-    }
+  E.forEach((e, i) => {
+    const [pts, type = "data", lab] = e;
+    const g = el("g", { class: "edge " + type }, svg);
+    const d = pts.map((p, k) => (k ? "L" : "M") + p[0] + " " + p[1]).join(" ");
+    el("path", { class: "base", d, "marker-end": "url(#arr)" }, g);
+    if (type === "data") el("path", { class: "dots", d }, g);
+    if (lab) { const t = el("text", { class: "elabel", x: lab[0], y: lab[1], "text-anchor": lab[3] }, svg); t.textContent = lab[2]; }
+    const a = pts[0], z = pts[pts.length - 1];
+    EDGE_OF[i] = { g, from: blockAt(a[0], a[1]), to: blockAt(z[0], z[1]) };
+  });
+  for (const [id, kind, x, y, w, h, t, s, r] of B) {
+    const g = el("g", { class: `blk k-${kind}`, tabindex: 0, role: "button", "aria-label": `${t}: ${s}`, "data-id": id }, svg);
+    el("rect", { class: "box", x, y, width: w, height: h, rx: 9 }, g);
+    const lines = [[t, "t"], [s, "s"], [r, "r"]].filter(l => l[0]);
+    const lh = h < 45 ? 0 : 17, y0 = y + h / 2 - (lines.length - 1) * lh / 2 + 5;
+    lines.slice(0, h < 45 ? 1 : 3).forEach(([txt, c], k) => { el("text", { class: c, x: x + w / 2, y: y0 + k * lh, "text-anchor": "middle" }, g).textContent = txt; });
+    g.addEventListener("click", () => select(id));
+    g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(id); } });
   }
-  for (const n of v.nodes) {
-    const g = el("g", { class: `node k-${n.kind}` + (n.future ? " future" : ""), tabindex: 0, role: "button",
-      "aria-label": n.label + (n.open ? " (opens detailed view)" : "") }, svg);
-    g.dataset.id = n.id;
-    el("rect", { class: "box", x: n.x, y: n.y, width: n.w, height: n.h }, g);
-    const lines = wrap(n.label, Math.max(10, Math.floor(n.w / 9)));
-    const subLines = n.sub ? wrap(n.sub, Math.max(12, Math.floor(n.w / 7))) : [];
-    const total = lines.length * 17 + subLines.length * 14;
-    let y = n.y + n.h / 2 - total / 2 + 13;
-    for (const l of lines) { el("text", { class: "lbl", x: n.x + n.w / 2, y, "text-anchor": "middle" }, g).textContent = l; y += 17; }
-    for (const l of subLines) { el("text", { class: "sub", x: n.x + n.w / 2, y: y - 2, "text-anchor": "middle" }, g).textContent = l; y += 14; }
-    if (n.open) el("text", { class: "drill", x: n.x + n.w - 8, y: n.y + 16, "text-anchor": "end" }, g).textContent = "▸";
-    g.addEventListener("click", () => select(n.id));
-    g.addEventListener("dblclick", () => { if (n.open) go(n.open); });
-    g.addEventListener("keydown", ev => {
-      if (ev.key === "Enter" && n.open && selected === n.id) go(n.open);
-      else if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n.id); }
-    });
-  }
-  document.getElementById("vtitle").textContent = v.title;
-  document.getElementById("vlead").textContent = v.lead;
-  renderCrumbs();
-  const kinds = new Set(v.nodes.map(n => n.kind));
-  document.getElementById("legend").innerHTML = KINDS.filter(k => kinds.has(k[0]))
-    .map(([k, t]) => `<span><i style="background:var(--${k});border-color:var(--${k}-b)"></i>${t}</span>`).join("")
-    + (v.nodes.some(n => n.future) ? `<span><i style="border-style:dashed;border-color:var(--line)"></i>Future / optional</span>` : "");
-  selected = null;
-  showView(v);
 }
-
-function renderCrumbs() {
-  const chain = []; let c = current;
-  while (c) { chain.unshift(c); c = PARENT[c]; }
-  document.getElementById("crumbs").innerHTML = chain.map((id, i) => i === chain.length - 1
-    ? `<span>${VIEWS[id].title}</span>` : `<a data-v="${id}">${VIEWS[id].title}</a>`).join(" › ");
-  document.querySelectorAll("#crumbs a").forEach(a => a.addEventListener("click", () => go(a.dataset.v)));
+function select(id, fromHash) {
+  current = id;
+  svg.querySelectorAll(".blk").forEach(g => g.classList.toggle("sel", g.dataset.id === id));
+  for (const i in EDGE_OF) { const e = EDGE_OF[i]; e.g.classList.toggle("hi", !!id && (e.from === id || e.to === id)); }
+  if (!id) { panel.innerHTML = overview(); if (!fromHash) history.replaceState(null, "", location.pathname); return; }
+  const b = B.find(b => b[0] === id), k = ORDER.indexOf(id);
+  const prev = ORDER[(k + ORDER.length - 1) % ORDER.length], next = ORDER[(k + 1) % ORDER.length];
+  panel.innerHTML = `<span class="kicker" style="color:var(--k-${b[1]});background:var(--k-${b[1]}-bg)">${KIND[b[1]]}</span>
+    <h2>${b[6]}</h2>${I[id]()}
+    <div class="navrow"><button class="btn" data-go="${prev}">◀ ${NAMES[prev]}</button><button class="btn" data-go="">Overview</button><button class="btn next" data-go="${next}">${NAMES[next]} ▶</button></div>`;
+  panel.querySelectorAll("[data-go]").forEach(btn => btn.addEventListener("click", () => select(btn.dataset.go || null)));
+  panel.scrollTop = 0;
+  if (!fromHash) history.replaceState(null, "", "#" + id);
+  if (window.matchMedia("(max-width: 1180px)").matches && !fromHash) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+document.addEventListener("keydown", ev => {
+  if (ev.target.closest && ev.target.closest("input, textarea")) return;
+  if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+  const k = current ? ORDER.indexOf(current) : -1;
+  const n = ev.key === "ArrowRight" ? (k + 1) % ORDER.length : (k <= 0 ? ORDER.length - 1 : k - 1);
+  select(ORDER[n]);
+});
+document.getElementById("tour").addEventListener("click", () => select("mic"));
 
-function showView(v) {
-  const drill = v.nodes.filter(n => n.open);
-  panel.innerHTML = `<h3>${v.title}</h3><p>${v.lead}</p>
-    <p class="hint">Click any block for its purpose and details.${drill.length ? ` Blocks marked ▸ open a deeper view: ${drill.map(n => `<b>${n.label}</b>`).join(", ")}.` : ""}</p>
-    ${v.extra || ""}
-    ${PARENT[current] ? `<button id="open" type="button">◂ Back to ${VIEWS[PARENT[current]].title}</button>` : ""}`;
-  const b = document.getElementById("open");
-  if (b) b.addEventListener("click", () => go(PARENT[current]));
-}
-
-function select(id) {
-  const v = VIEWS[current], n = v.nodes.find(x => x.id === id);
-  selected = id;
-  svg.querySelectorAll(".node").forEach(g => g.classList.toggle("selected", g.dataset.id === id));
-  const kind = KINDS.find(k => k[0] === n.kind)[1];
-  const status = n.future ? `<span class="tag st-future">future</span>` : `<span class="tag st-planned">planned</span>`;
-  const list = (title, arr) => arr && arr.length ? `<h4>${title}</h4><ul>${arr.map(x => `<li>${x}</li>`).join("")}</ul>` : "";
-  panel.innerHTML = `<h3>${n.label}</h3>
-    <span class="tag">${kind}</span>${status}${n.sub ? `<span class="tag">${n.sub}</span>` : ""}
-    ${n.purpose ? `<h4>Purpose</h4><p>${n.purpose}</p>` : ""}
-    ${n.details ? `<h4>How it works</h4>${n.details.map(d => `<p>${d}</p>`).join("")}` : ""}
-    ${list("Key parameters", n.params)}${list("Connections", n.io)}
-    ${n.open ? `<button id="open" type="button">Open ${VIEWS[n.open].title} ▸</button>` : ""}
-    <p class="hint" style="margin-top:14px"><a href="#" id="clear">Show view summary</a></p>`;
-  const b = document.getElementById("open");
-  if (b) b.addEventListener("click", () => go(n.open));
-  document.getElementById("clear").addEventListener("click", ev => { ev.preventDefault(); selected = null;
-    svg.querySelectorAll(".node").forEach(g => g.classList.remove("selected")); showView(v); });
-}
-
-function go(viewId) { if (location.hash !== "#" + viewId) location.hash = viewId; else render(viewId); }
-window.addEventListener("hashchange", () => { const h = location.hash.slice(1); render(VIEWS[h] ? h : "system"); });
-
-// theme toggle (remembered per viewer)
-const themeBtn = document.getElementById("theme");
-function applyTheme(t) { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); }
-try { applyTheme(localStorage.getItem("theme")); } catch (e) {}
-themeBtn.addEventListener("click", () => {
-  const dark = document.documentElement.getAttribute("data-theme") === "dark" ||
-    (!document.documentElement.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
-  const t = dark ? "light" : "dark"; applyTheme(t);
-  try { localStorage.setItem("theme", t); } catch (e) {}
+// theme toggle (remembered per browser)
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch (e) {}
+document.getElementById("theme").addEventListener("click", () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch (e) {}
 });
 
-render(VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : "system");
+draw();
+const start = location.hash.slice(1);
+select(I[start] ? start : null, true);
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (I[h] && h !== current) select(h, true); });
 </script>
 </body>
 </html>

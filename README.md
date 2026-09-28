@@ -1,8 +1,9 @@
-﻿# FPGA Audio ID: architecture map
+# FPGA Audio ID: design map
 
-Interactive block diagram of the FPGA Audio ID design: a PDM MEMS microphone and a Digilent Cmod A7-35T
-(Artix-7) that classify sounds (speech, vehicle/engine, machinery/tools, alarm/siren, background), with a
-MicroBlaze V soft processor, a streaming DSP front-end and FFT spectrum engine, and a planned hydrophone path.
+A clickable map of everything the FPGA Audio ID design does: a PDM MEMS microphone on a Digilent Cmod A7-35T
+(Artix-7), filters in the FPGA logic that turn the mic's pulses into 16 kHz audio, an FFT spectrum engine, and a
+MicroBlaze V soft processor that computes mel features and runs a small neural network to classify sounds as
+speech, vehicle, machinery, alarm or background, twice a second.
 
 View it at https://otac0011.github.io/FPGA_Audio_ID-docs/
 
